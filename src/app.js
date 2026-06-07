@@ -745,11 +745,13 @@ const renderCart = async () => {
             <p>${formatPrice(item.price)} × ${item.quantity} = ${formatPrice(item.subtotal)}</p>
           </div>
         </div>
-        <div class="cart-item-controls">
-          <button class="button button-sm button-ghost" data-action="decrease" data-id="${item.id}">-</button>
-          <span>${item.quantity}</span>
-          <button class="button button-sm button-ghost" data-action="increase" data-id="${item.id}">+</button>
-          <button class="button button-sm button-secondary" data-action="remove" data-id="${item.id}">Удалить</button>
+        <div class="cart-item-actions">
+          <div class="cart-item-controls" aria-label="Количество товара">
+            <button class="button button-sm button-ghost quantity-button" data-action="decrease" data-id="${item.id}" aria-label="Уменьшить количество">-</button>
+            <span class="cart-item-quantity">${item.quantity}</span>
+            <button class="button button-sm button-ghost quantity-button" data-action="increase" data-id="${item.id}" aria-label="Увеличить количество">+</button>
+          </div>
+          <button class="button button-sm cart-remove-button" data-action="remove" data-id="${item.id}">Удалить</button>
         </div>
       `;
       itemsContainer.appendChild(itemCard);

@@ -699,12 +699,15 @@ select {
 .cart-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+  align-items: start;
   gap: 24px;
 }
 
 .cart-item {
   display: grid;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
   padding: 22px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.96);
@@ -729,13 +732,42 @@ select {
 
 .cart-item-controls {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
 }
 
-.cart-item-controls button {
-  min-width: 88px;
+.cart-item-actions {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  min-width: 176px;
+}
+
+.cart-item-quantity {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--accent-dark);
+}
+
+.quantity-button {
+  width: 46px;
+  min-width: 46px;
+  height: 42px;
+  padding: 0;
+}
+
+.cart-remove-button {
+  min-width: 112px;
+  padding: 9px 14px;
+  color: #ffffff;
+  background: #dc2626;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.18);
+}
+
+.cart-remove-button:hover {
+  background: #b91c1c;
 }
 
 .form-note {
@@ -746,6 +778,7 @@ select {
 
 .cart-items {
   display: grid;
+  align-content: start;
   gap: 16px;
 }
 
@@ -1334,6 +1367,24 @@ textarea {
 
   .product-card-image {
     min-height: 190px;
+  }
+
+  .cart-item {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .cart-item-actions {
+    justify-items: stretch;
+    min-width: 0;
+  }
+
+  .cart-item-controls {
+    justify-content: flex-start;
+  }
+
+  .cart-remove-button {
+    width: 100%;
   }
 }
 
