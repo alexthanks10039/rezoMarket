@@ -1,0 +1,9 @@
+import { initApp } from './src/app.js';
+
+initApp().catch((error) => {
+  console.error('[app.init_error]', error);
+  const appRoot = document.querySelector('#app');
+  if (appRoot) {
+    appRoot.innerHTML = `<div class="page-panel"><h2>Ошибка запуска приложения</h2><p>${error.message}</p></div>`;
+  }
+});

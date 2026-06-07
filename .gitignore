@@ -1,0 +1,13 @@
+verification-*.png
+.codex/
+node_modules/
+.env
+.env.local
+BOT TG/backend/.env
+.DS_Store
+Thumbs.db
+rag/chroma_db/
+rag/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
