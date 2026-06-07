@@ -1,4 +1,4 @@
-import { initApp } from './src/app.js?v=20260615';
+import { initApp } from './src/app.js?v=20260624';
 
 initApp().catch((error) => {
   console.error('[app.init_error]', error);

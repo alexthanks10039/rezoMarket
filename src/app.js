@@ -57,6 +57,10 @@ const setPageTitle = (title) => {
   }
 };
 
+const syncViewportWidth = () => {
+  document.documentElement.style.setProperty('--viewport-width', `${document.documentElement.clientWidth}px`);
+};
+
 const getCurrentPath = () => {
   if (window.location.hash.startsWith('#/')) {
     const hash = window.location.hash.slice(1);
@@ -223,22 +227,51 @@ const renderFooter = () => {
   const footer = document.querySelector('.app-footer');
   if (!footer) return;
   footer.innerHTML = `
-    <div class="footer-grid">
-      <div>
-        <div class="footer-brand">Мир Сальников</div>
-        <p class="footer-text">Интернет-магазин запчастей, сальников и комплектующих для бытовой техники в Алматы.</p>
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <section class="footer-brand-block">
+          <div class="footer-brand-row">
+            <span class="footer-brand-mark"></span>
+            <div>
+              <div class="footer-brand">Мир Сальников</div>
+              <p class="footer-tagline">Запчасти и уплотнения для бытовой техники в Алматы</p>
+            </div>
+          </div>
+          <p class="footer-text">Сальники, подшипники, ремни, манжеты и прокладки с подбором по размеру, модели или фото.</p>
+          <div class="footer-badges">
+            <span>Алматы</span>
+            <span>Подбор по фото</span>
+          </div>
+        </section>
+        <section class="footer-panel">
+          <h3>Контакты</h3>
+          <a href="tel:+77001234567">+7 700 123 45 67</a>
+          <a href="https://wa.me/77001234567" target="_blank">WhatsApp</a>
+          <a href="https://t.me/your_telegram" target="_blank">Telegram</a>
+          <p class="footer-note">Пн-Сб: 09:00-19:00 · Алматы</p>
+        </section>
+        <section class="footer-panel">
+          <h3>Разделы</h3>
+          <a data-link href="${getRouteHref('/catalog')}">Каталог</a>
+          <a data-link href="${getRouteHref('/search')}">Поиск детали</a>
+          <a data-link href="${getRouteHref('/selection')}">Подбор с менеджером</a>
+          <a data-link href="${getRouteHref('/how-to-order')}">Как заказать</a>
+        </section>
+        <section class="footer-panel">
+          <h3>Документы</h3>
+          <a data-link href="${getRouteHref('/offer')}">Публичная оферта</a>
+          <a data-link href="${getRouteHref('/contacts')}">Контакты магазина</a>
+          <p class="footer-note">Оплата после подтверждения наличия.</p>
+        </section>
+        <section class="footer-cta">
+          <h3>Не нашли деталь?</h3>
+          <p>Менеджер подберёт аналог или проверит наличие.</p>
+          <a class="button button-primary" data-link href="${getRouteHref('/selection')}">Запросить подбор</a>
+        </section>
       </div>
-      <div>
-        <h3>Контакты</h3>
-        <a href="tel:+77001234567">+7 700 123 45 67</a>
-        <a href="https://wa.me/77001234567" target="_blank">WhatsApp</a>
-        <a href="https://t.me/your_telegram" target="_blank">Telegram</a>
-      </div>
-      <div>
-        <h3>Разделы</h3>
-        <a data-link href="${getRouteHref('/catalog')}">Каталог</a>
-        <a data-link href="${getRouteHref('/contacts')}">Контакты</a>
-        <a data-link href="${getRouteHref('/how-to-order')}">Как заказать</a>
+      <div class="footer-bottom">
+        <span>© ${new Date().getFullYear()} Мир Сальников</span>
+        <span>Каталог, Telegram CRM и подбор запчастей</span>
       </div>
     </div>
   `;
@@ -1103,6 +1136,48 @@ const renderHowToOrder = () => {
   setAppContent(section);
 };
 
+const renderOffer = () => {
+  setPageTitle('Публичная оферта');
+  addAnalytics({ eventType: 'offer_view', source: 'frontend' });
+
+  const section = document.createElement('section');
+  section.className = 'section legal-page';
+  section.innerHTML = `
+    <div class="section-heading">
+      <span class="kicker">Документы</span>
+      <h2>Публичная оферта</h2>
+      <p>Условия оформления заказов в интернет-магазине “Мир Сальников”.</p>
+    </div>
+    <div class="legal-content">
+      <article>
+        <h3>1. Общие положения</h3>
+        <p>Интернет-магазин принимает заявки на подбор и покупку запчастей для бытовой техники. Размещение товара в каталоге не является гарантией наличия до подтверждения менеджером.</p>
+      </article>
+      <article>
+        <h3>2. Оформление заказа</h3>
+        <p>Покупатель отправляет заявку через корзину, форму подбора, WhatsApp или Telegram. Менеджер связывается с покупателем, уточняет совместимость, наличие, цену, способ получения и условия оплаты.</p>
+      </article>
+      <article>
+        <h3>3. Цена и наличие</h3>
+        <p>Цены на сайте указаны в тенге и могут уточняться при подтверждении заказа. Итоговая стоимость фиксируется после проверки наличия и согласования с покупателем.</p>
+      </article>
+      <article>
+        <h3>4. Подбор деталей</h3>
+        <p>Для точного подбора покупатель должен предоставить размер, артикул, модель техники, фото старой детали или другую информацию. Совместимость подтверждается менеджером до оплаты.</p>
+      </article>
+      <article>
+        <h3>5. Оплата и получение</h3>
+        <p>Оплата производится после подтверждения заказа. Доступные способы получения: самовывоз, доставка или иной способ, согласованный с менеджером.</p>
+      </article>
+      <article>
+        <h3>6. Возврат и обмен</h3>
+        <p>Возврат и обмен выполняются по согласованию с магазином и в рамках применимого законодательства. Детали, подобранные по неверным данным покупателя, могут требовать отдельного согласования.</p>
+      </article>
+    </div>
+  `;
+  setAppContent(section);
+};
+
 const renderNotFound = () => {
   setPageTitle('Страница не найдена');
   const element = renderEmptyState('Страница не найдена', 'Похоже, такой страницы нет.', 'Вернуться на главную', '/');
@@ -1148,6 +1223,7 @@ routeDefinitions = [
   { pattern: /^\/selection\/?$/, title: 'Подбор детали', action: renderSelection },
   { pattern: /^\/contacts\/?$/, title: 'Контакты', action: renderContacts },
   { pattern: /^\/how-to-order\/?$/, title: 'Как заказать', action: renderHowToOrder },
+  { pattern: /^\/offer\/?$/, title: 'Публичная оферта', action: renderOffer },
   { pattern: /^\/admin\/?$/, title: 'Админ-панель', action: renderAdmin },
 ];
 
@@ -1192,6 +1268,7 @@ const renderRoute = () => {
   const query = getQueryParams();
   match.route.action({ params: match.params, query });
   updateCartBadge();
+  syncViewportWidth();
 };
 
 const handleAddToCart = async (productId) => {
@@ -1225,10 +1302,12 @@ const refreshCart = async () => {
 
 const initRouter = () => {
   window.addEventListener('popstate', renderRoute);
+  window.addEventListener('resize', syncViewportWidth);
   document.body.addEventListener('click', handleLinkClick);
 };
 
 export const initApp = async () => {
+  syncViewportWidth();
   renderShell();
   initRouter();
   try {
