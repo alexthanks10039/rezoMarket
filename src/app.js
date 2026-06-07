@@ -107,10 +107,9 @@ const setAdminModalOpen = (isOpen) => {
 
 const updateCartBadge = () => {
   const count = state.currentCart?.itemCount || 0;
-  const badge = document.querySelector('[data-cart-count]');
-  if (badge) {
+  document.querySelectorAll('[data-cart-count]').forEach((badge) => {
     badge.textContent = count > 0 ? String(count) : '';
-  }
+  });
 };
 
 const setAppContent = (content) => {
@@ -179,8 +178,10 @@ const renderShell = () => {
 };
 
 const createNavItem = (href, label, icon, active = false) => {
+  const badge = href === '/cart' ? '<span class="cart-count-badge" data-cart-count></span>' : '';
+
   return `<a class="nav-link ${active ? 'active' : ''}" data-link href="${getRouteHref(href)}">
-      <span class="nav-icon">${icon}</span>
+      <span class="nav-icon">${icon}${badge}</span>
       <span>${label}</span>
     </a>`;
 };
@@ -260,7 +261,7 @@ const renderMobileNav = () => {
       <span>Поиск</span>
     </a>
     <a class="mobile-nav-item" data-link href="${getRouteHref('/cart')}">
-      <span>🛒</span>
+      <span class="mobile-cart-icon">🛒<span class="cart-count-badge" data-cart-count></span></span>
       <span>Корзина</span>
     </a>
   `;

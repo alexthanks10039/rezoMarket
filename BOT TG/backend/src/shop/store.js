@@ -25,6 +25,18 @@ const toProduct = (product) => ({
   category: clone(categoryById.get(product.categoryId) || null),
 });
 
+const normalizeSearchText = (value) => {
+  const text = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[х×*]/g, 'x');
+  const compact = text.replace(/[\s._/-]+/g, '');
+  const spacedSize = text.match(/\b(\d{2,})\s+(\d{2,})\s+(\d{1,}(?:[.,]\d+)?)\b/);
+  const sizeAlias = spacedSize ? `${spacedSize[1]}x${spacedSize[2]}x${spacedSize[3].replace(',', '.')}` : '';
+
+  return [text, compact, sizeAlias].filter(Boolean);
+};
+
 const buildCartTotals = (cart) => {
   const items = cart.items || [];
   const totalAmount = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
@@ -88,20 +100,21 @@ export const listProducts = ({
   }
 
   if (search) {
-    const needle = String(search).trim().toLowerCase();
+    const needles = normalizeSearchText(search);
     items = items.filter((product) => {
-      const title = String(product.title).toLowerCase();
-      const sku = String(product.sku).toLowerCase();
-      const sizeValue = String(product.size || '').toLowerCase();
-      const appliance = String(product.applianceType || '').toLowerCase();
-      const tags = (product.tags || []).join(' ').toLowerCase();
-      return (
-        title.includes(needle) ||
-        sku.includes(needle) ||
-        sizeValue.includes(needle) ||
-        appliance.includes(needle) ||
-        tags.includes(needle)
-      );
+      const haystack = normalizeSearchText([
+        product.title,
+        product.sku,
+        product.brand,
+        product.size,
+        product.applianceType,
+        product.material,
+        product.description,
+        ...(product.tags || []),
+        ...(product.compatibility || []),
+      ].join(' '));
+
+      return needles.some((needle) => haystack.some((value) => value.includes(needle)));
     });
   }
 

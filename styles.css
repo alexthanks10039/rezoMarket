@@ -190,12 +190,11 @@ a {
 }
 
 .desktop-menu {
-  display: grid;
-  grid-auto-flow: column;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
 }
 
 .nav-link {
@@ -208,6 +207,11 @@ a {
   background: rgba(247, 249, 255, 0.95);
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
+}
+
+.nav-icon {
+  position: relative;
+  display: inline-flex;
 }
 
 .nav-link:hover {
@@ -1085,6 +1089,7 @@ textarea {
 }
 
 .mobile-nav-item {
+  position: relative;
   display: inline-flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -1094,6 +1099,36 @@ textarea {
   padding: 10px 6px;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.mobile-cart-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(33, 85, 255, 0.24);
+}
+
+.cart-count-badge:not(:empty) {
+  display: inline-flex;
 }
 
 .mobile-nav-item:hover {
@@ -1248,8 +1283,7 @@ textarea {
   }
 
   .desktop-menu {
-    grid-auto-flow: row;
-    row-gap: 10px;
+    gap: 10px;
     width: 100%;
     padding: 12px 14px;
   }
@@ -1281,11 +1315,56 @@ textarea {
   .footer-grid {
     grid-template-columns: 1fr;
   }
+
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .grid-5,
+  .trust-grid,
+  .steps-grid,
+  .product-info-grid,
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .product-card-image {
+    min-height: 190px;
+  }
 }
 
 @media (max-width: 700px) {
   .app-header {
-    padding: 14px 16px;
+    padding: 10px 12px;
+  }
+
+  .app-header-inner {
+    padding: 0;
+  }
+
+  .header-center,
+  .header-actions {
+    display: none;
+  }
+
+  .header-start {
+    align-items: center;
+    text-align: center;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+  }
+
+  .brand-subtitle {
+    font-size: 0.82rem;
+    line-height: 1.35;
   }
 
   .button,
@@ -1297,5 +1376,9 @@ textarea {
   .mobile-nav {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .admin-launcher {
+    bottom: 102px;
   }
 }
