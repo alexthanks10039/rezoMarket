@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -11,7 +12,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB_DIR = Path(__file__).resolve().parent / "chroma_db"
-COLLECTION_NAME = "Мир Сальников_project_knowledge"
+COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "mir_salnikov_project_knowledge")
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 

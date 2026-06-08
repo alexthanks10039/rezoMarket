@@ -15,7 +15,6 @@
     "@vendure/admin-ui-plugin": "3.6.4",
     "@vendure/asset-server-plugin": "3.6.4",
     "@vendure/core": "3.6.4",
-    "@vendure/email-plugin": "3.6.4",
     "@vendure/job-queue-plugin": "3.6.4",
     "bullmq": "^5.67.1",
     "dotenv": "^16.4.7",
@@ -32,4 +31,3 @@
     "node": "^20.19.0 || >=22.12.0"
   }
 }
-

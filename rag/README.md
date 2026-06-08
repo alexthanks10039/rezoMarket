@@ -41,6 +41,7 @@ python ingest.py
 - режет документы на чанки;
 - создает embeddings;
 - сохраняет ChromaDB в `./chroma_db`.
+- использует Chroma collection `mir_salnikov_project_knowledge`.
 
 Повторный запуск пересобирает базу. Чтобы добавить документы без очистки базы:
 

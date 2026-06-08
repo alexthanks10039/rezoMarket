@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -15,7 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DOCS_DIR = PROJECT_ROOT / "docs"
 DEFAULT_DB_DIR = Path(__file__).resolve().parent / "chroma_db"
 ROOT_PROJECT_FILES = [PROJECT_ROOT / "PROJECT_ANALYSIS.md"]
-COLLECTION_NAME = "Мир Сальников_project_knowledge"
+COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "mir_salnikov_project_knowledge")
 SUPPORTED_EXTENSIONS = {".md", ".txt"}
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 

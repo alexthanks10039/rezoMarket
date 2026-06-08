@@ -68,6 +68,7 @@ export const ensureCatalogIndex = async () => {
     method: 'PUT',
     body: JSON.stringify({
       settings: {
+        number_of_replicas: 0,
         analysis: {
           analyzer: {
             catalog_text: {
@@ -119,6 +120,21 @@ export const ensureCatalogIndex = async () => {
   });
 
   return { ok: true, index: INDEX_NAME };
+};
+
+export const resetCatalogIndex = async () => {
+  if (!isOpenSearchConfigured()) {
+    return { ok: false, skipped: true, reason: 'OPENSEARCH_NODE is not configured' };
+  }
+
+  await opensearchRequest(`/${INDEX_NAME}`, { method: 'DELETE' }).catch((error) => {
+    const message = String(error.message);
+    if (!message.includes('OpenSearch 404')) {
+      throw error;
+    }
+  });
+
+  return ensureCatalogIndex();
 };
 
 export const indexProductFromVendure = async (product) => {
@@ -248,6 +264,10 @@ export const searchCatalog = async (params = {}) => {
 
 export const rebuildCatalogIndex = async (sourceProducts) => {
   const products = sourceProducts || shopStore.listProducts({ page: 1, limit: 1000 }).items;
+  if (isOpenSearchConfigured()) {
+    await resetCatalogIndex();
+  }
+
   const results = [];
   for (const product of products) {
     results.push(await indexProductFromVendure(product));

@@ -1,6 +1,6 @@
 import * as shopStore from '../../../shop/store.js';
 import { createAnalyticsEvent } from '../../shop-analytics/shop-analytics.service.js';
-import { indexProductFromVendure, rebuildCatalogIndex, toCatalogDocument } from '../../search/opensearch.service.js';
+import { rebuildCatalogIndex, toCatalogDocument } from '../../search/opensearch.service.js';
 import { fetchVendureOrders, fetchVendureProducts, isVendureConfigured } from './vendure.client.js';
 
 const syncLogs = [];
@@ -89,11 +89,10 @@ export const syncProductsFromVendure = async () => {
     products.push(...getFallbackProducts());
   }
 
-  const results = [];
   for (const product of products) {
     upsertProductKnowledgeSnapshot(product);
-    results.push(await indexProductFromVendure(product));
   }
+  const indexResult = await rebuildCatalogIndex(products);
 
   logVendureSync({
     eventType: 'manual.product.sync',
@@ -102,15 +101,15 @@ export const syncProductsFromVendure = async () => {
     payload: {
       source: isVendureConfigured() ? 'vendure' : 'fallback',
       total: products.length,
-      indexed: results.filter((item) => item.ok).length,
+      indexed: indexResult.indexed,
     },
   });
 
   return {
     source: isVendureConfigured() ? 'vendure' : 'fallback',
     total: products.length,
-    indexed: results.filter((item) => item.ok).length,
-    skipped: results.filter((item) => item.skipped).length,
+    indexed: indexResult.indexed,
+    skipped: indexResult.skipped,
   };
 };
 
@@ -158,4 +157,3 @@ export const rebuildShopRag = async () => {
 };
 
 export const rebuildSearchFromFallback = async () => rebuildCatalogIndex(getFallbackProducts());
-
