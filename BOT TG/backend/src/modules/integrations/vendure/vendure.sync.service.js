@@ -1,7 +1,7 @@
 import * as shopStore from '../../../shop/store.js';
 import { createAnalyticsEvent } from '../../shop-analytics/shop-analytics.service.js';
 import { rebuildCatalogIndex, toCatalogDocument } from '../../search/opensearch.service.js';
-import { fetchVendureOrders, fetchVendureProducts, isVendureConfigured } from './vendure.client.js';
+import { fetchVendureOrders, fetchVendureProducts, isVendureAdminConfigured } from './vendure.client.js';
 
 const syncLogs = [];
 const productKnowledgeSnapshots = new Map();
@@ -75,7 +75,8 @@ const getFallbackProducts = () => shopStore.listProducts({ page: 1, limit: 1000 
 
 export const syncProductsFromVendure = async () => {
   const products = [];
-  if (isVendureConfigured()) {
+  const hasVendureAdmin = isVendureAdminConfigured();
+  if (hasVendureAdmin) {
     let skip = 0;
     const take = 100;
     let total = 0;
@@ -99,14 +100,14 @@ export const syncProductsFromVendure = async () => {
     entityType: 'product',
     status: 'success',
     payload: {
-      source: isVendureConfigured() ? 'vendure' : 'fallback',
+      source: hasVendureAdmin ? 'vendure' : 'fallback',
       total: products.length,
       indexed: indexResult.indexed,
     },
   });
 
   return {
-    source: isVendureConfigured() ? 'vendure' : 'fallback',
+    source: hasVendureAdmin ? 'vendure' : 'fallback',
     total: products.length,
     indexed: indexResult.indexed,
     skipped: indexResult.skipped,
@@ -114,7 +115,7 @@ export const syncProductsFromVendure = async () => {
 };
 
 export const syncOrdersFromVendure = async () => {
-  if (!isVendureConfigured()) {
+  if (!isVendureAdminConfigured()) {
     const fallbackOrders = shopStore.listOrders();
     return {
       source: 'fallback',

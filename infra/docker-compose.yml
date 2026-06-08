@@ -6,9 +6,15 @@ services:
     container_name: rezomarket-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      VENDURE_DB_NAME: ${VENDURE_DB_NAME:-vendure_db}
+      VENDURE_DB_USER: ${VENDURE_DB_USER:-vendure}
+      VENDURE_DB_PASSWORD: ${VENDURE_DB_PASSWORD:-vendure}
+      SVET_DB_NAME: ${SVET_DB_NAME:-svet_ai_db}
+      SVET_DB_USER: ${SVET_DB_USER:-svet}
+      SVET_DB_PASSWORD: ${SVET_DB_PASSWORD:-svet}
     ports:
       - "5433:5432"
     volumes:
@@ -160,10 +166,12 @@ services:
       TELEGRAM_MANAGER_CHAT_ID: ${TELEGRAM_MANAGER_CHAT_ID:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin}
       VENDURE_WEBHOOK_SECRET: ${VENDURE_WEBHOOK_SECRET:-dev_vendure_webhook_secret}
       SITE_ORIGIN: ${SITE_ORIGIN:-http://127.0.0.1:4173}
-      DATABASE_URL: postgresql://svet:svet@postgres:5432/svet_ai_db?schema=public
-      DIRECT_URL: postgresql://svet:svet@postgres:5432/svet_ai_db?schema=public
+      DATABASE_URL: postgresql://${SVET_DB_USER:-svet}:${SVET_DB_PASSWORD:-svet}@postgres:5432/${SVET_DB_NAME:-svet_ai_db}?schema=public
+      DIRECT_URL: postgresql://${SVET_DB_USER:-svet}:${SVET_DB_PASSWORD:-svet}@postgres:5432/${SVET_DB_NAME:-svet_ai_db}?schema=public
       REDIS_URL: redis://redis:6379
       OPENSEARCH_NODE: http://opensearch:9200
       OPENSEARCH_URL: http://opensearch:9200

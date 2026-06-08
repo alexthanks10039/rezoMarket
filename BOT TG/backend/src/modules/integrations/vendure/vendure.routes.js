@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAdminKey } from '../../shared/admin-auth.js';
+import { importSeedCatalogToVendure } from './vendure.import.service.js';
 import { handleVendureWebhook, verifyVendureSignature } from './vendure.webhooks.js';
 import {
   listProductKnowledgeSnapshots,
@@ -35,6 +36,16 @@ vendureIntegrationRouter.post('/api/admin/integrations/vendure/sync-products', r
   }
 });
 
+vendureIntegrationRouter.post('/api/admin/integrations/vendure/import-seed', requireAdminKey, async (_req, res) => {
+  try {
+    const result = await importSeedCatalogToVendure();
+    res.status(202).json({ success: true, ...result });
+  } catch (error) {
+    console.error('[vendure.import_seed.error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Vendure seed import failed' });
+  }
+});
+
 vendureIntegrationRouter.post('/api/admin/integrations/vendure/sync-orders', requireAdminKey, async (_req, res) => {
   try {
     const result = await syncOrdersFromVendure();
@@ -62,4 +73,3 @@ vendureIntegrationRouter.post('/api/admin/shop/rag/rebuild', requireAdminKey, as
 vendureIntegrationRouter.get('/api/admin/shop/rag/snapshots', requireAdminKey, (_req, res) => {
   res.json({ success: true, items: listProductKnowledgeSnapshots() });
 });
-

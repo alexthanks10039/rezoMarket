@@ -20,7 +20,12 @@ const parseSize = (value) => {
 
 export const toCatalogDocument = (product) => {
   const variant = product.variants?.[0] || product.variant || {};
-  const category = product.category || product.collections?.[0] || {};
+  const stockQty = Number(product.stockQty ?? variant.stockOnHand ?? product.stockOnHand ?? 0);
+  const inStock = product.inStock ?? (variant.stockLevel ? variant.stockLevel !== 'OUT_OF_STOCK' : stockQty > 0);
+  const categoryFacet = (product.facetValues || []).find((value) => (
+    value.facet?.code === 'shop-category' || value.facet?.code === 'category' || value.facet?.name === 'Категория магазина'
+  ));
+  const category = product.category || product.collections?.[0] || categoryFacet || {};
   const customFields = {
     ...(product.customFields || {}),
     ...(variant.customFields || {}),
@@ -35,11 +40,12 @@ export const toCatalogDocument = (product) => {
     description: product.description || '',
     sku: variant.sku || product.sku || customFields.externalSku || '',
     category: category.title || category.name || category.slug || product.category || '',
+    categorySlug: category.slug || category.code || product.categoryId || '',
     collection: category.name || category.title || product.collection || '',
     price: Number(product.price ?? variant.price ?? 0),
     currency: product.currency || variant.currencyCode || 'KZT',
-    inStock: product.inStock ?? product.stockLevel !== 'OUT_OF_STOCK',
-    stockQty: Number(product.stockQty ?? product.stockOnHand ?? customFields.stockQty ?? 0),
+    inStock,
+    stockQty,
     brand: customFields.brand || product.brand || '',
     size: normalizeSize(customFields.size || product.size || ''),
     innerDiameter: Number(customFields.innerDiameter ?? product.innerDiameter ?? parsedSize.innerDiameter ?? 0) || null,
@@ -88,6 +94,7 @@ export const ensureCatalogIndex = async () => {
           description: { type: 'text', analyzer: 'catalog_text' },
           sku: { type: 'keyword', fields: { text: { type: 'text', analyzer: 'catalog_text' } } },
           category: { type: 'keyword' },
+          categorySlug: { type: 'keyword' },
           collection: { type: 'keyword' },
           price: { type: 'float' },
           currency: { type: 'keyword' },
@@ -138,9 +145,13 @@ export const resetCatalogIndex = async () => {
 };
 
 export const indexProductFromVendure = async (product) => {
+  const hasVariant = Boolean(product.variant || product.variants?.length);
   const document = toCatalogDocument(product);
   if (!isOpenSearchConfigured()) {
     return { ok: false, skipped: true, provider: 'fallback', document };
+  }
+  if (!hasVariant) {
+    return { ok: false, skipped: true, reason: 'Product has no indexable variant', document };
   }
 
   await ensureCatalogIndex();
@@ -195,8 +206,23 @@ export const searchCatalog = async (params = {}) => {
   const filterFields = ['category', 'brand', 'size', 'material', 'applianceType', 'inStock'];
   for (const field of filterFields) {
     if (params[field] != null && params[field] !== '') {
-      filters.push({ term: { [field]: field === 'inStock' ? String(params[field]) === 'true' : params[field] } });
+      if (field === 'category') {
+        filters.push({
+          bool: {
+            should: [
+              { term: { category: params[field] } },
+              { term: { categorySlug: params[field] } },
+            ],
+            minimum_should_match: 1,
+          },
+        });
+      } else {
+        filters.push({ term: { [field]: field === 'inStock' ? String(params[field]) === 'true' : params[field] } });
+      }
     }
+  }
+  if (params.slug) {
+    filters.push({ term: { slug: params.slug } });
   }
   if (params.minPrice || params.maxPrice) {
     filters.push({

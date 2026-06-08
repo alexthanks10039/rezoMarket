@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { createLeadRecord } from '../leads.store.js';
+import { importSeedCatalogToVendure } from '../modules/integrations/vendure/vendure.import.service.js';
+import { createVendureDraftOrderFromShopOrder } from '../modules/integrations/vendure/vendure.order.service.js';
+import { searchCatalog } from '../modules/search/opensearch.service.js';
 import { sendOwnerLeadNotification } from '../telegram.service.js';
 import * as shopStore from './store.js';
 
@@ -35,19 +38,19 @@ shopRouter.get('/api/shop/filters', (_req, res) => {
   res.json(shopStore.getCatalogFilters());
 });
 
-shopRouter.get('/api/shop/categories/:slug', (req, res) => {
+shopRouter.get('/api/shop/categories/:slug', async (req, res) => {
   const category = shopStore.getCategoryBySlug(req.params.slug);
   if (!category) {
     return res.status(404).json({ success: false, message: 'Category not found' });
   }
-  const products = shopStore.listProducts({ category: category.slug, page: 1, limit: 100 }).items;
+  const products = (await searchCatalog({ category: category.slug, page: 1, limit: 100 })).items;
   return res.json({ category, products });
 });
 
-shopRouter.get('/api/shop/products', (req, res) => {
+shopRouter.get('/api/shop/products', async (req, res) => {
   const query = req.query || {};
-  const response = shopStore.listProducts({
-    search: query.search,
+  const response = await searchCatalog({
+    q: query.search,
     category: query.category,
     brand: query.brand,
     size: query.size,
@@ -65,7 +68,12 @@ shopRouter.get('/api/shop/products', (req, res) => {
   res.json(response);
 });
 
-shopRouter.get('/api/shop/products/:slug', (req, res) => {
+shopRouter.get('/api/shop/products/:slug', async (req, res) => {
+  const indexed = await searchCatalog({ slug: req.params.slug, page: 1, limit: 1 });
+  if (indexed.items?.[0]) {
+    return res.json({ product: { ...indexed.items[0], images: indexed.items[0].images || [], analogs: [] } });
+  }
+
   const product = shopStore.getProductBySlug(req.params.slug);
   if (!product) {
     return res.status(404).json({ success: false, message: 'Product not found' });
@@ -171,6 +179,7 @@ shopRouter.post('/api/shop/orders', async (req, res) => {
 
   const lead = createLeadRecord(leadPayload);
   let telegramResult = 'skipped';
+  let vendureResult = { ok: false, skipped: true, reason: 'not_attempted' };
 
   try {
     await sendOwnerLeadNotification(lead);
@@ -180,11 +189,24 @@ shopRouter.post('/api/shop/orders', async (req, res) => {
     telegramResult = 'failed';
   }
 
+  try {
+    vendureResult = await createVendureDraftOrderFromShopOrder(order);
+  } catch (error) {
+    console.error('[shop.order.vendure_draft_error]', error);
+    vendureResult = { ok: false, error: error.message };
+  }
+
   if (body.sessionId) {
     shopStore.clearCart(body.sessionId);
   }
 
-  return res.status(201).json({ success: true, order, leadId: lead.id, telegram: telegramResult });
+  return res.status(201).json({
+    success: true,
+    order,
+    leadId: lead.id,
+    telegram: telegramResult,
+    vendure: vendureResult,
+  });
 });
 
 shopRouter.post('/api/shop/selection-request', async (req, res) => {
@@ -311,6 +333,12 @@ shopRouter.get('/api/admin/shop/analytics', requireAdminKey, (_req, res) => {
   res.json({ success: true, items: shopStore.listAnalytics() });
 });
 
-shopRouter.post('/api/admin/shop/import', requireAdminKey, (req, res) => {
-  res.json({ success: true, message: 'Import endpoint is available, but no import logic configured yet.' });
+shopRouter.post('/api/admin/shop/import', requireAdminKey, async (_req, res) => {
+  try {
+    const result = await importSeedCatalogToVendure();
+    res.status(202).json({ success: true, ...result });
+  } catch (error) {
+    console.error('[shop.import.error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Shop import failed' });
+  }
 });

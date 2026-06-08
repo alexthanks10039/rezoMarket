@@ -14,7 +14,11 @@ const shopApiUrl = () => {
   return base ? `${base}/shop-api` : '';
 };
 
+let cachedAdminToken = '';
+
 export const isVendureConfigured = () => Boolean(adminApiUrl() || shopApiUrl());
+export const isVendureAdminConfigured = () => Boolean(adminApiUrl());
+export const isVendureShopConfigured = () => Boolean(shopApiUrl());
 
 const requestGraphql = async ({ endpoint, query, variables, token }) => {
   if (!endpoint) {
@@ -36,21 +40,98 @@ const requestGraphql = async ({ endpoint, query, variables, token }) => {
     throw new Error(message);
   }
 
-  return payload.data;
+  return { data: payload.data, response };
 };
 
-export const vendureAdminRequest = (query, variables = {}) => requestGraphql({
-  endpoint: adminApiUrl(),
-  query,
-  variables,
-  token: process.env.VENDURE_ADMIN_TOKEN,
-});
+export const loginVendureAdmin = async ({ force = false } = {}) => {
+  if (process.env.VENDURE_ADMIN_TOKEN && !force) {
+    return process.env.VENDURE_ADMIN_TOKEN;
+  }
+  if (cachedAdminToken && !force) {
+    return cachedAdminToken;
+  }
 
-export const vendureShopRequest = (query, variables = {}) => requestGraphql({
-  endpoint: shopApiUrl(),
-  query,
-  variables,
-});
+  const username = process.env.SUPERADMIN_USERNAME;
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!username || !password) {
+    throw new Error('SUPERADMIN_USERNAME and SUPERADMIN_PASSWORD are required for Vendure Admin API login');
+  }
+
+  const { data, response } = await requestGraphql({
+    endpoint: adminApiUrl(),
+    query: `
+      mutation Login($username: String!, $password: String!) {
+        login(username: $username, password: $password) {
+          __typename
+          ... on CurrentUser { id identifier }
+          ... on ErrorResult { errorCode message }
+        }
+      }
+    `,
+    variables: { username, password },
+  });
+
+  if (data.login?.__typename !== 'CurrentUser') {
+    throw new Error(data.login?.message || 'Vendure Admin API login failed');
+  }
+
+  cachedAdminToken = response.headers.get('vendure-auth-token') || '';
+  if (!cachedAdminToken) {
+    throw new Error('Vendure Admin API did not return vendure-auth-token');
+  }
+  return cachedAdminToken;
+};
+
+export const vendureAdminRequest = async (query, variables = {}) => {
+  const token = await loginVendureAdmin();
+  const { data } = await requestGraphql({
+    endpoint: adminApiUrl(),
+    query,
+    variables,
+    token,
+  });
+  return data;
+};
+
+export const vendureShopRequest = async (query, variables = {}) => {
+  const { data } = await requestGraphql({
+    endpoint: shopApiUrl(),
+    query,
+    variables,
+  });
+  return data;
+};
+
+export const fetchVendureCollections = async ({ take = 200, skip = 0 } = {}) => {
+  const data = await vendureAdminRequest(`
+    query Collections($take: Int!, $skip: Int!) {
+      collections(options: { take: $take, skip: $skip }) {
+        totalItems
+        items { id slug name }
+      }
+    }
+  `, { take, skip });
+
+  return data.collections;
+};
+
+export const fetchVendureFacets = async ({ take = 200, skip = 0 } = {}) => {
+  const data = await vendureAdminRequest(`
+    query Facets($take: Int!, $skip: Int!) {
+      facets(options: { take: $take, skip: $skip }) {
+        totalItems
+        items {
+          id
+          code
+          name
+          values { id code name }
+        }
+      }
+    }
+  `, { take, skip });
+
+  return data.facets;
+};
 
 export const fetchVendureProducts = async ({ take = 100, skip = 0 } = {}) => {
   const data = await vendureAdminRequest(`
@@ -85,13 +166,14 @@ export const fetchVendureProducts = async ({ take = 100, skip = 0 } = {}) => {
             metaDescription
           }
           collections { id slug name }
-          facetValues { id name facet { id name } }
+          facetValues { id code name facet { id code name } }
           variants {
             id
             name
             sku
             price
             currencyCode
+            stockOnHand
             stockLevel
             customFields {
               size
