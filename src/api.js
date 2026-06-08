@@ -48,6 +48,10 @@ export const fetchProducts = (filters = {}) => {
   const query = queryString(filters);
   return request(`/api/shop/products${query}`);
 };
+export const searchProducts = (filters = {}) => {
+  const query = queryString(filters);
+  return request(`/api/shop/search${query}`);
+};
 export const fetchProduct = (slug) => request(`/api/shop/products/${encodeURIComponent(slug)}`);
 
 export const createCartSession = (sessionId) => request('/api/shop/cart', {
@@ -94,7 +98,7 @@ export const sendAnalyticsEvent = (payload) =>
   });
 
 export const askShopAssistant = (question) =>
-  request('/api/rag/ask', {
+  request('/api/shop/assistant/ask', {
     method: 'POST',
     body: JSON.stringify({ question, context: 'shop' }),
   });

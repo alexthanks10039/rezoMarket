@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model VendureSyncLog {
+  id              String   @id @default(cuid())
+  eventType       String
+  entityType      String
+  vendureEntityId String?
+  status          String   @default("success")
+  payload         Json?
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([entityType, vendureEntityId])
+}
+
+model ShopAnalyticsEvent {
+  id               String   @id @default(cuid())
+  eventType        String
+  sessionId        String?
+  clientId         String?
+  vendureProductId String?
+  vendureVariantId String?
+  vendureOrderId   String?
+  searchQuery      String?
+  source           String?
+  value            Float?
+  meta             Json?
+  createdAt        DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([sessionId])
+  @@index([clientId])
+  @@index([vendureProductId])
+  @@index([searchQuery])
+}
+
+model SelectionRequest {
+  id               String   @id @default(cuid())
+  clientId         String?
+  name             String
+  phone            String
+  message          String?
+  applianceModel   String?
+  partSize         String?
+  vendureProductId String?
+  status           String   @default("new")
+  source           String?
+  meta             Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([phone])
+  @@index([vendureProductId])
+}
+
+model ProductKnowledgeSnapshot {
+  id               String   @id @default(cuid())
+  vendureProductId String
+  vendureVariantId String?
+  sku              String?
+  slug             String
+  title            String
+  description      String?
+  specs            Json?
+  compatibility    Json?
+  contentForEmbedding String
+  lastSyncedAt     DateTime @default(now())
+  isActive         Boolean  @default(true)
+
+  @@unique([vendureProductId, vendureVariantId])
+  @@index([sku])
+  @@index([slug])
+  @@index([isActive])
+}
+
+model KnowledgeDocument {
+  id        String           @id @default(cuid())
+  source    String
+  title     String
+  meta      Json?
+  chunks    KnowledgeChunk[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model KnowledgeChunk {
+  id         String            @id @default(cuid())
+  documentId String
+  document   KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  metadata   Json?
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime          @default(now())
+
+  @@index([documentId])
+}
+

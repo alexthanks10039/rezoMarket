@@ -12,6 +12,8 @@
 - `src/cart-store.js` - клиентская cart session в `localStorage`.
 - `BOT TG/backend` - Express backend для shop API, лидов, Telegram CRM, аналитики и RAG-заглушки.
 - `rag` - локальный Python RAG-инструментарий для индексации проектных документов.
+- `vendure-svet` - отдельный Vendure commerce-core для каталога, товаров, заказов, Admin UI и Storefront API.
+- `infra` - Docker Compose для PostgreSQL/pgvector, Redis, OpenSearch, Vendure, backend "Свет", RAG API и frontend.
 
 ## Что уже реализовано
 
@@ -23,6 +25,27 @@
 - Telegram CRM для уведомлений владельца о заказах и запросах подбора.
 - AI/RAG endpoint для консультаций по подбору деталей: Gemini, OpenAI или локальный fallback без ключей.
 - Админ API для товаров, категорий, заказов и аналитики через `ADMIN_KEY`.
+- Подготовлена headless-commerce архитектура: Vendure + PostgreSQL + Redis + OpenSearch + backend "Свет" + AI/RAG + Analytics.
+
+## Full-stack запуск через Docker
+
+Перед первым запуском проверьте Docker Desktop.
+
+```powershell
+Copy-Item infra/.env.example infra/.env
+docker compose -f infra/docker-compose.yml up -d --build
+```
+
+URL после запуска:
+
+- Frontend: `http://127.0.0.1:4173`
+- Backend "Свет": `http://127.0.0.1:3000/health`
+- Vendure Admin UI: `http://127.0.0.1:3003/admin`
+- Vendure Shop API: `http://127.0.0.1:3002/shop-api`
+- OpenSearch: `http://127.0.0.1:9201`
+- RAG API: `http://127.0.0.1:8010/health`
+
+Подробный план, endpoints и проверки: `docs/vendure-svet-architecture.md`.
 
 ## Локальный запуск frontend
 

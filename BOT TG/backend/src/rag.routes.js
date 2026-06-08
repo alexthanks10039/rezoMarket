@@ -182,12 +182,15 @@ const buildShopAnswer = (question) => {
   };
 };
 
-ragRouter.post('/api/rag/ask', (req, res) => {
+const askHandler = (req, res) => {
   Promise.resolve(handleAsk(req, res)).catch((error) => {
     console.error('[rag.ask.error]', error);
     res.status(500).json({ success: false, message: 'Assistant request failed' });
   });
-});
+};
+
+ragRouter.post('/api/rag/ask', askHandler);
+ragRouter.post('/api/shop/assistant/ask', askHandler);
 
 const handleAsk = async (req, res) => {
   const body = req.body || {};
@@ -227,6 +230,8 @@ const handleAsk = async (req, res) => {
     success: true,
     answer: response.answer,
     suggestions: localResponse.suggestions,
+    suggestedProducts: productContext.slice(0, 3),
+    handoffToManager: response.provider === 'local' || /уточн|менеджер|фото|модель|артикул/i.test(response.answer),
     provider: response.provider,
     model: response.model,
     warning: 'Я могу помочь подобрать варианты, но точную совместимость лучше подтвердить менеджеру.',

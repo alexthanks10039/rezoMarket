@@ -1,0 +1,35 @@
+{
+  "name": "vendure-svet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vendure commerce core for Мир Сальников / Магазин",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start:server": "node dist/index.js",
+    "start:worker": "node dist/index-worker.js",
+    "dev:server": "ts-node src/index.ts",
+    "dev:worker": "ts-node src/index-worker.ts"
+  },
+  "dependencies": {
+    "@vendure/admin-ui-plugin": "3.6.4",
+    "@vendure/asset-server-plugin": "3.6.4",
+    "@vendure/core": "3.6.4",
+    "@vendure/email-plugin": "3.6.4",
+    "@vendure/job-queue-plugin": "3.6.4",
+    "bullmq": "^5.67.1",
+    "dotenv": "^16.4.7",
+    "ioredis": "^5.9.3",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "ts-node": "^10.9.2",
+    "typescript": "5.8.2"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
+

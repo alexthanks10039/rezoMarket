@@ -387,19 +387,44 @@ export const getOrderById = (orderId) => {
 export const listOrders = () => [...orders.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 export const createSelectionRequest = ({ name, phone, message, applianceModel, partSize, comment, source }) => {
+  const now = new Date().toISOString();
   const request = {
     id: `selection_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    clientId: null,
     name: String(name || '').trim(),
     phone: String(phone || '').trim(),
     message: String(message || '').trim(),
     applianceModel: String(applianceModel || '').trim(),
     partSize: String(partSize || '').trim(),
+    vendureProductId: null,
+    status: 'new',
     comment: String(comment || '').trim(),
     source: source || 'selection_request',
-    createdAt: new Date().toISOString(),
+    meta: null,
+    createdAt: now,
+    updatedAt: now,
   };
 
   selectionRequests.push(request);
+  return clone(request);
+};
+
+export const listSelectionRequests = () => selectionRequests
+  .slice()
+  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  .map(clone);
+
+export const getSelectionRequestById = (requestId) => {
+  if (!requestId) return null;
+  const request = selectionRequests.find((item) => item.id === requestId);
+  return request ? clone(request) : null;
+};
+
+export const updateSelectionRequestStatus = (requestId, status) => {
+  const request = selectionRequests.find((item) => item.id === requestId);
+  if (!request) return null;
+  request.status = String(status || request.status).trim() || request.status;
+  request.updatedAt = new Date().toISOString();
   return clone(request);
 };
 
@@ -408,8 +433,12 @@ export const logAnalyticsEvent = (event) => {
     id: `analytics_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     eventType: String(event.eventType || 'unknown'),
     productId: event.productId || null,
+    vendureProductId: event.vendureProductId || event.productId || null,
+    vendureVariantId: event.vendureVariantId || null,
     categoryId: event.categoryId || null,
     orderId: event.orderId || null,
+    vendureOrderId: event.vendureOrderId || event.orderId || null,
+    searchQuery: event.searchQuery || event.query || null,
     clientId: event.clientId || null,
     sessionId: event.sessionId || null,
     source: event.source || 'shop',

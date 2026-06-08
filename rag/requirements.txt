@@ -5,3 +5,5 @@ langchain-huggingface
 langchain-text-splitters
 chromadb
 sentence-transformers
+fastapi
+uvicorn[standard]

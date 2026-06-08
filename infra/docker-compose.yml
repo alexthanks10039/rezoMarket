@@ -1,0 +1,194 @@
+name: rezomarket-svet
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rezomarket-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: rezomarket-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    container_name: rezomarket-opensearch
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-OpenSearch_123!}
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9201:9200"
+      - "9601:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 20
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.15.0
+    container_name: rezomarket-opensearch-dashboards
+    profiles: ["tools"]
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "5602:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  vendure-server:
+    build:
+      context: ../vendure-svet
+    container_name: rezomarket-vendure-server
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      VENDURE_PORT: 3002
+      VENDURE_ADMIN_UI_PORT: 3003
+      VENDURE_DB_NAME: ${VENDURE_DB_NAME:-vendure_db}
+      VENDURE_DB_USER: ${VENDURE_DB_USER:-vendure}
+      VENDURE_DB_PASSWORD: ${VENDURE_DB_PASSWORD:-vendure}
+      VENDURE_DB_SYNCHRONIZE: ${VENDURE_DB_SYNCHRONIZE:-true}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin}
+      COOKIE_SECRET: ${COOKIE_SECRET:-dev_cookie_secret_change_me}
+      APP_SECRET: ${APP_SECRET:-dev_app_secret_change_me}
+      VENDURE_WEBHOOK_SECRET: ${VENDURE_WEBHOOK_SECRET:-dev_vendure_webhook_secret}
+      VENDURE_CORS_ORIGIN: ${VENDURE_CORS_ORIGIN:-http://127.0.0.1:4173,http://localhost:4173}
+      VENDURE_DB_HOST: postgres
+      VENDURE_DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SVET_BACKEND_URL: http://backend-svet:3000
+    command: ["node", "dist/index.js"]
+    ports:
+      - "3002:3002"
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend-svet:
+        condition: service_started
+
+  vendure-worker:
+    build:
+      context: ../vendure-svet
+    container_name: rezomarket-vendure-worker
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      VENDURE_PORT: 3002
+      VENDURE_ADMIN_UI_PORT: 3003
+      VENDURE_DB_NAME: ${VENDURE_DB_NAME:-vendure_db}
+      VENDURE_DB_USER: ${VENDURE_DB_USER:-vendure}
+      VENDURE_DB_PASSWORD: ${VENDURE_DB_PASSWORD:-vendure}
+      VENDURE_DB_SYNCHRONIZE: ${VENDURE_DB_SYNCHRONIZE:-true}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin}
+      COOKIE_SECRET: ${COOKIE_SECRET:-dev_cookie_secret_change_me}
+      APP_SECRET: ${APP_SECRET:-dev_app_secret_change_me}
+      VENDURE_WEBHOOK_SECRET: ${VENDURE_WEBHOOK_SECRET:-dev_vendure_webhook_secret}
+      VENDURE_CORS_ORIGIN: ${VENDURE_CORS_ORIGIN:-http://127.0.0.1:4173,http://localhost:4173}
+      VENDURE_DB_HOST: postgres
+      VENDURE_DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SVET_BACKEND_URL: http://backend-svet:3000
+    command: ["node", "dist/index-worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend-svet:
+        condition: service_started
+
+  backend-svet:
+    build:
+      context: ../BOT TG/backend
+    container_name: rezomarket-backend-svet
+    environment:
+      PORT: 3000
+      ADMIN_KEY: ${ADMIN_KEY:-change_me_admin_key}
+      TG_KEY: ${TG_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      OWNER_ID: ${OWNER_ID:-}
+      TELEGRAM_MANAGER_CHAT_ID: ${TELEGRAM_MANAGER_CHAT_ID:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      VENDURE_WEBHOOK_SECRET: ${VENDURE_WEBHOOK_SECRET:-dev_vendure_webhook_secret}
+      SITE_ORIGIN: ${SITE_ORIGIN:-http://127.0.0.1:4173}
+      DATABASE_URL: postgresql://svet:svet@postgres:5432/svet_ai_db?schema=public
+      DIRECT_URL: postgresql://svet:svet@postgres:5432/svet_ai_db?schema=public
+      REDIS_URL: redis://redis:6379
+      OPENSEARCH_NODE: http://opensearch:9200
+      OPENSEARCH_URL: http://opensearch:9200
+      VENDURE_API_URL: http://vendure-server:3002
+      VENDURE_SHOP_API_URL: http://vendure-server:3002/shop-api
+      VENDURE_ADMIN_API_URL: http://vendure-server:3002/admin-api
+      VENDURE_ADMIN_URL: http://localhost:3003/admin
+      RAG_SERVICE_URL: http://rag-api:8010
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
+  rag-api:
+    build:
+      context: ../rag
+    container_name: rezomarket-rag-api
+    ports:
+      - "8010:8010"
+    volumes:
+      - rag_chroma:/app/chroma_db
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/frontend.Dockerfile
+    container_name: rezomarket-frontend
+    ports:
+      - "4173:80"
+    depends_on:
+      backend-svet:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  opensearch_data:
+  rag_chroma:

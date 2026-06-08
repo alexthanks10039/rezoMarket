@@ -1,0 +1,74 @@
+{
+  "collections": [
+    {
+      "slug": "salniki",
+      "name": "Сальники",
+      "description": "Сальники для стиральных машин и бытовой техники"
+    },
+    {
+      "slug": "podshipniki",
+      "name": "Подшипники",
+      "description": "Подшипники для ремонта бытовой техники"
+    },
+    {
+      "slug": "remni",
+      "name": "Ремни",
+      "description": "Приводные ремни и аналоги"
+    }
+  ],
+  "products": [
+    {
+      "name": "Сальник 35x62x10 NBR",
+      "slug": "salnik-35x62x10-nbr",
+      "sku": "SL-356210-NBR",
+      "price": 2300,
+      "currency": "KZT",
+      "collection": "salniki",
+      "customFields": {
+        "size": "35x62x10",
+        "innerDiameter": 35,
+        "outerDiameter": 62,
+        "width": 10,
+        "material": "NBR",
+        "brand": "Generic",
+        "applianceType": "washing_machine",
+        "compatibility": "Стиральные машины, требуется подтверждение по модели",
+        "searchKeywords": "35 62 10 35x62x10 сальник стиральная машина"
+      }
+    },
+    {
+      "name": "Подшипник 6204 ZZ",
+      "slug": "podshipnik-6204-zz",
+      "sku": "BR-6204-ZZ",
+      "price": 1800,
+      "currency": "KZT",
+      "collection": "podshipniki",
+      "customFields": {
+        "size": "20x47x14",
+        "innerDiameter": 20,
+        "outerDiameter": 47,
+        "width": 14,
+        "material": "Steel",
+        "brand": "Generic",
+        "applianceType": "washing_machine",
+        "searchKeywords": "6204 20x47x14 подшипник"
+      }
+    },
+    {
+      "name": "Ремень 1270 J5",
+      "slug": "remen-1270-j5",
+      "sku": "BLT-1270-J5",
+      "price": 3200,
+      "currency": "KZT",
+      "collection": "remni",
+      "customFields": {
+        "size": "1270 J5",
+        "material": "Rubber",
+        "brand": "Generic",
+        "applianceType": "washing_machine",
+        "searchKeywords": "1270 j5 ремень стиральная машина"
+      }
+    }
+  ]
+}
+

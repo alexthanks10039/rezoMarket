@@ -3,11 +3,16 @@ verification-*.png
 node_modules/
 .env
 .env.local
+infra/.env
+vendure-svet/.env
+vendure-svet/dist/
 BOT TG/backend/.env
 .DS_Store
 Thumbs.db
 rag/chroma_db/
 rag/.venv/
+vendure-svet/static/assets/
+vendure-svet/static/email/
 __pycache__/
 *.py[cod]
 .pytest_cache/
