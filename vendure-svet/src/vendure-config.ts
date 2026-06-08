@@ -33,11 +33,12 @@ const list = (value: string | undefined) => String(value || '')
 const redisOptions = {
   host: process.env.REDIS_HOST || 'redis',
   port: int(process.env.REDIS_PORT, 6379),
+  maxRetriesPerRequest: null,
   ...(process.env.REDIS_PASSWORD ? { password: process.env.REDIS_PASSWORD } : {}),
 };
 
 const productFields = [
-  { name: 'sku', type: 'string' as const, nullable: true, public: true },
+  { name: 'externalSku', type: 'string' as const, nullable: true, public: true },
   { name: 'size', type: 'string' as const, nullable: true, public: true },
   { name: 'innerDiameter', type: 'float' as const, nullable: true, public: true },
   { name: 'outerDiameter', type: 'float' as const, nullable: true, public: true },

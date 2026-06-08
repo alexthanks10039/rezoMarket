@@ -33,7 +33,7 @@ export const toCatalogDocument = (product) => {
     slug: product.slug,
     title: product.title || product.name || variant.name || product.slug,
     description: product.description || '',
-    sku: variant.sku || product.sku || customFields.sku || '',
+    sku: variant.sku || product.sku || customFields.externalSku || '',
     category: category.title || category.name || category.slug || product.category || '',
     collection: category.name || category.title || product.collection || '',
     price: Number(product.price ?? variant.price ?? 0),
@@ -112,7 +112,8 @@ export const ensureCatalogIndex = async () => {
       },
     }),
   }).catch((error) => {
-    if (!String(error.message).includes('resource_already_exists_exception')) {
+    const message = String(error.message);
+    if (!message.includes('resource_already_exists_exception') && !message.includes('already exists')) {
       throw error;
     }
   });

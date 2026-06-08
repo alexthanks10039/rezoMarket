@@ -115,7 +115,7 @@ AI/RAG:
 
 Product:
 
-- `sku`
+- `externalSku` для внешнего/поискового артикула, потому что `sku` уже занято нативным полем варианта Vendure
 - `size`
 - `innerDiameter`
 - `outerDiameter`
@@ -179,7 +179,7 @@ URL:
 - Backend "Свет": `http://127.0.0.1:3000/health`
 - Vendure Shop API: `http://127.0.0.1:3002/shop-api`
 - Vendure Admin API: `http://127.0.0.1:3002/admin-api`
-- Vendure Admin UI: `http://127.0.0.1:3003/admin`
+- Vendure Admin UI: `http://127.0.0.1:3002/admin`
 - OpenSearch: `http://127.0.0.1:9201`
 - RAG API: `http://127.0.0.1:8010/health`
 - OpenSearch Dashboards: `docker compose -f infra/docker-compose.yml --profile tools up -d opensearch-dashboards`
@@ -240,4 +240,3 @@ Telegram:
 - Backend "Свет" получил Prisma schema, но runtime ещё использует in-memory fallback. Следующий этап - подключить Prisma repositories без ломки текущих routes.
 - Frontend подготовлен к Vendure через `src/vendure-client.js`, но каталог пока не переключён на Storefront API. Следующий этап - миграция каталога, корзины и checkout на Vendure GraphQL.
 - Нужно заменить dev secrets в `infra/.env` перед внешним доступом.
-

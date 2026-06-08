@@ -40,7 +40,7 @@ URL после запуска:
 
 - Frontend: `http://127.0.0.1:4173`
 - Backend "Свет": `http://127.0.0.1:3000/health`
-- Vendure Admin UI: `http://127.0.0.1:3003/admin`
+- Vendure Admin UI: `http://127.0.0.1:3002/admin`
 - Vendure Shop API: `http://127.0.0.1:3002/shop-api`
 - OpenSearch: `http://127.0.0.1:9201`
 - RAG API: `http://127.0.0.1:8010/health`

@@ -91,7 +91,11 @@ services:
     command: ["node", "dist/index.js"]
     ports:
       - "3002:3002"
-      - "3003:3003"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 30
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,7 +115,7 @@ services:
       VENDURE_DB_NAME: ${VENDURE_DB_NAME:-vendure_db}
       VENDURE_DB_USER: ${VENDURE_DB_USER:-vendure}
       VENDURE_DB_PASSWORD: ${VENDURE_DB_PASSWORD:-vendure}
-      VENDURE_DB_SYNCHRONIZE: ${VENDURE_DB_SYNCHRONIZE:-true}
+      VENDURE_DB_SYNCHRONIZE: "false"
       SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME:-superadmin}
       SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-superadmin}
       COOKIE_SECRET: ${COOKIE_SECRET:-dev_cookie_secret_change_me}
@@ -125,6 +129,8 @@ services:
       SVET_BACKEND_URL: http://backend-svet:3000
     command: ["node", "dist/index-worker.js"]
     depends_on:
+      vendure-server:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
@@ -155,7 +161,7 @@ services:
       VENDURE_API_URL: http://vendure-server:3002
       VENDURE_SHOP_API_URL: http://vendure-server:3002/shop-api
       VENDURE_ADMIN_API_URL: http://vendure-server:3002/admin-api
-      VENDURE_ADMIN_URL: http://localhost:3003/admin
+      VENDURE_ADMIN_URL: http://localhost:3002/admin
       RAG_SERVICE_URL: http://rag-api:8010
     ports:
       - "3000:3000"

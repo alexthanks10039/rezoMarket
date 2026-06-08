@@ -43,7 +43,7 @@ export const fetchVendureProduct = (slug) => vendureRequest(`
       slug
       description
       customFields {
-        sku
+        externalSku
         size
         innerDiameter
         outerDiameter

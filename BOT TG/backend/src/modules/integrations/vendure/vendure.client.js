@@ -66,7 +66,7 @@ export const fetchVendureProducts = async ({ take = 100, skip = 0 } = {}) => {
           createdAt
           updatedAt
           customFields {
-            sku
+            externalSku
             size
             innerDiameter
             outerDiameter
