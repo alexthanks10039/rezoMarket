@@ -69,6 +69,26 @@ const ensureCart = (sessionId) => {
 
 export const listCategories = () => categories.map(toCategory);
 
+export const getCatalogFilters = () => {
+  const unique = (mapper) => Array.from(new Set(products
+    .flatMap((product) => mapper(product))
+    .map((value) => String(value || '').trim())
+    .filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+
+  const prices = products
+    .map((product) => Number(product.price))
+    .filter((price) => !Number.isNaN(price));
+
+  return {
+    brands: unique((product) => [product.brand]),
+    materials: unique((product) => [product.material]),
+    applianceTypes: unique((product) => [product.applianceType]),
+    compatibility: unique((product) => product.compatibility || []),
+    minPrice: prices.length ? Math.min(...prices) : 0,
+    maxPrice: prices.length ? Math.max(...prices) : 0,
+  };
+};
+
 export const getCategoryBySlug = (slug) => {
   if (!slug) return null;
   return categories.find((category) => category.slug === slug) || null;
@@ -83,9 +103,11 @@ export const listProducts = ({
   size,
   applianceType,
   material,
+  compatibility,
   minPrice,
   maxPrice,
   inStock,
+  hasDiscount,
   sort,
   page = 1,
   limit = 12,
@@ -138,11 +160,26 @@ export const listProducts = ({
     items = items.filter((product) => String(product.material || '').toLowerCase().includes(value));
   }
 
+  if (compatibility) {
+    const value = String(compatibility).trim().toLowerCase();
+    items = items.filter((product) => [
+      ...(product.compatibility || []),
+      ...(product.tags || []),
+      product.description,
+    ].some((field) => String(field || '').toLowerCase().includes(value)));
+  }
+
   if (typeof inStock !== 'undefined' && inStock !== null) {
     const value = String(inStock).toLowerCase();
     if (value === 'true') {
       items = items.filter((product) => product.inStock === true);
+    } else if (value === 'false') {
+      items = items.filter((product) => product.inStock === false);
     }
+  }
+
+  if (String(hasDiscount).toLowerCase() === 'true') {
+    items = items.filter((product) => Number(product.oldPrice || 0) > Number(product.price || 0));
   }
 
   if (minPrice != null) {
@@ -172,6 +209,12 @@ export const listProducts = ({
         break;
       case 'in_stock':
         items.sort((a, b) => Number(b.inStock) - Number(a.inStock));
+        break;
+      case 'stock_desc':
+        items.sort((a, b) => Number(b.stockQty || 0) - Number(a.stockQty || 0));
+        break;
+      case 'discount':
+        items.sort((a, b) => Number(b.oldPrice || 0) - Number(b.price || 0) - (Number(a.oldPrice || 0) - Number(a.price || 0)));
         break;
       default:
         items.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));

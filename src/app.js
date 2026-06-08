@@ -15,9 +15,27 @@ const createElement = (html) => {
   return template.content.firstElementChild;
 };
 
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const formatMessageText = (value) => escapeHtml(value).replace(/\n/g, '<br>');
+
 const formatPrice = (value) => {
   const number = Number(value || 0);
   return `${number.toLocaleString('ru-RU')} ₸`;
+};
+
+const formatItemsCount = (count) => {
+  const value = Number(count || 0);
+  const mod10 = value % 10;
+  const mod100 = value % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${value} товар`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${value} товара`;
+  return `${value} товаров`;
 };
 
 const makePlaceholderImage = (label = 'Фото нет', width = 520, height = 360) => {
@@ -208,7 +226,7 @@ const renderHeader = () => {
         <span class="brand-mark"></span>
         <span class="brand-title">Мир Сальников</span>
       </a>
-      <div class="brand-subtitle">Запчасти и уплотнения для бытовой техники</div>
+      <div class="brand-subtitle">Запчасти для техники</div>
     </div>
     <div class="header-center">
       <nav class="desktop-menu">
@@ -530,42 +548,76 @@ const renderCatalog = async () => {
   setPageTitle('Каталог запчастей для бытовой техники');
   addAnalytics({ eventType: 'category_view', source: 'frontend', meta: { page: 'catalog', query } });
 
+  let filterOptions = { brands: [], materials: [], applianceTypes: [], compatibility: [], minPrice: '', maxPrice: '' };
+  try {
+    filterOptions = { ...filterOptions, ...(await api.fetchFilterOptions()) };
+  } catch (error) {
+    console.warn('[catalog.filters]', error.message);
+  }
+
+  const renderDatalist = (id, items) => `
+    <datalist id="${id}">
+      ${(items || []).map((item) => `<option value="${escapeHtml(item)}"></option>`).join('')}
+    </datalist>
+  `;
+  const activeFilterCount = ['search', 'category', 'brand', 'size', 'applianceType', 'material', 'compatibility', 'minPrice', 'maxPrice', 'inStock', 'hasDiscount']
+    .filter((key) => query[key]).length;
+
   const page = document.createElement('div');
   page.innerHTML = `
-    <section class="section">
-      <div class="section-heading">
-        <span class="kicker">Каталог</span>
-        <h2>Найдите нужную деталь в магазине</h2>
+    <section class="section catalog-control-section">
+      <div class="catalog-heading-row">
+        <div class="section-heading">
+          <span class="kicker">Каталог</span>
+          <h2>Найдите нужную деталь</h2>
+        </div>
+        <div class="catalog-filter-status">
+          <strong data-catalog-total>...</strong>
+          <span>${activeFilterCount ? `Активно фильтров: ${activeFilterCount}` : 'Все товары'}</span>
+        </div>
       </div>
       <form class="catalog-filters" data-filter-form>
-        <div class="filter-row">
-          <input name="search" type="search" placeholder="Поиск по артикулу, названию или модели" value="${query.search || ''}" />
+        <div class="filter-grid">
+          <input class="filter-wide" name="search" type="search" placeholder="Артикул, название, размер или модель" value="${escapeHtml(query.search || '')}" />
           <select name="category">
             <option value="">Все категории</option>
             ${state.categories.map((category) => `<option value="${category.slug}" ${category.slug === query.category ? 'selected' : ''}>${category.title}</option>`).join('')}
           </select>
-        </div>
-        <div class="filter-row">
-          <input name="brand" placeholder="Бренд" value="${query.brand || ''}" />
-          <input name="size" placeholder="Размер / 35x62x10" value="${query.size || ''}" />
-        </div>
-        <div class="filter-row">
-          <input name="applianceType" placeholder="Модель техники" value="${query.applianceType || ''}" />
+          <input name="brand" list="brand-options" placeholder="Бренд" value="${escapeHtml(query.brand || '')}" />
+          <input name="size" placeholder="Размер / 35x62x10" value="${escapeHtml(query.size || '')}" />
+          <input name="applianceType" list="appliance-options" placeholder="Тип или модель техники" value="${escapeHtml(query.applianceType || '')}" />
+          <input name="material" list="material-options" placeholder="Материал" value="${escapeHtml(query.material || '')}" />
+          <input name="compatibility" list="compatibility-options" placeholder="Совместимость / бренд техники" value="${escapeHtml(query.compatibility || '')}" />
+          <div class="price-filter">
+            <input name="minPrice" type="number" min="0" step="50" placeholder="Цена от" value="${escapeHtml(query.minPrice || '')}" />
+            <input name="maxPrice" type="number" min="0" step="50" placeholder="до ${filterOptions.maxPrice ? formatPrice(filterOptions.maxPrice) : 'цены'}" value="${escapeHtml(query.maxPrice || '')}" />
+          </div>
           <select name="inStock">
             <option value="">Наличие</option>
             <option value="true" ${query.inStock === 'true' ? 'selected' : ''}>В наличии</option>
             <option value="false" ${query.inStock === 'false' ? 'selected' : ''}>Под заказ</option>
           </select>
-        </div>
-        <div class="filter-row filter-actions">
+          <select name="hasDiscount">
+            <option value="">Цена</option>
+            <option value="true" ${query.hasDiscount === 'true' ? 'selected' : ''}>Со скидкой</option>
+          </select>
           <select name="sort">
-            <option value="newest" ${query.sort === 'newest' ? 'selected' : ''}>Новинки</option>
+            <option value="newest" ${!query.sort || query.sort === 'newest' ? 'selected' : ''}>Новинки</option>
             <option value="price_asc" ${query.sort === 'price_asc' ? 'selected' : ''}>Сначала дешевле</option>
             <option value="price_desc" ${query.sort === 'price_desc' ? 'selected' : ''}>Сначала дороже</option>
             <option value="in_stock" ${query.sort === 'in_stock' ? 'selected' : ''}>В наличии</option>
+            <option value="stock_desc" ${query.sort === 'stock_desc' ? 'selected' : ''}>Больше остаток</option>
+            <option value="discount" ${query.sort === 'discount' ? 'selected' : ''}>Сначала скидки</option>
           </select>
-          <button class="button button-primary" type="submit">Показать</button>
         </div>
+        <div class="filter-actions">
+          <button class="button button-primary" type="submit">Показать</button>
+          <a class="button button-ghost" data-link href="${getRouteHref('/catalog')}">Сбросить</a>
+        </div>
+        ${renderDatalist('brand-options', filterOptions.brands)}
+        ${renderDatalist('material-options', filterOptions.materials)}
+        ${renderDatalist('appliance-options', filterOptions.applianceTypes)}
+        ${renderDatalist('compatibility-options', filterOptions.compatibility)}
       </form>
       <div class="catalog-summary" data-catalog-summary></div>
     </section>
@@ -586,10 +638,12 @@ const renderCatalog = async () => {
 
   const grid = page.querySelector('[data-product-grid]');
   const summary = page.querySelector('[data-catalog-summary]');
+  const totalElement = page.querySelector('[data-catalog-total]');
   summary.appendChild(renderLoading('Загружаем каталог...'));
 
   try {
     const response = await api.fetchProducts({ ...query, limit: 24, page: 1 });
+    totalElement.textContent = `${response.total}`;
     summary.innerHTML = `<p class="catalog-summary-text">Найдено ${response.total} товаров</p>`;
     if (!response.items.length) {
       grid.appendChild(renderEmptyState('Товары не найдены', 'Попробуйте убрать фильтры или отправьте фото менеджеру.', 'Подобрать деталь', '/selection'));
@@ -729,11 +783,7 @@ const renderCart = async () => {
     <div class="cart-grid">
       <div class="cart-items" data-cart-items></div>
       <aside class="cart-summary-card">
-        <h3>Итого</h3>
-        <div class="order-summary">
-          <div><span>Товаров</span><strong>${cart.itemCount}</strong></div>
-          <div><span>Сумма</span><strong>${formatPrice(cart.totalAmount)}</strong></div>
-        </div>
+        <h3>Контакты для заказа</h3>
         <form class="checkout-form" data-order-form>
           <label>Имя<input name="customerName" type="text" placeholder="Ваше имя" required /></label>
           <label>Телефон<input name="phone" type="tel" placeholder="+7 700 123 45 67" required /></label>
@@ -753,6 +803,16 @@ const renderCart = async () => {
             </select>
           </label>
           <label>Комментарий<textarea name="comment" placeholder="Дополните информацию или укажите модель техники"></textarea></label>
+          <div class="checkout-totals" aria-label="Итого заказа">
+            <div>
+              <span>Количество</span>
+              <strong>${formatItemsCount(cart.itemCount)}</strong>
+            </div>
+            <div>
+              <span>Итого к подтверждению</span>
+              <strong>${formatPrice(cart.totalAmount)}</strong>
+            </div>
+          </div>
           <button class="button button-primary" type="submit">Оформить заказ без оплаты</button>
           <p class="form-note">Менеджер подтвердит наличие и стоимость перед оплатой.</p>
         </form>
@@ -764,7 +824,20 @@ const renderCart = async () => {
 
   const itemsContainer = section.querySelector('[data-cart-items]');
   if (!cart.items.length) {
-    itemsContainer.appendChild(renderEmptyState('Корзина пуста', 'Добавьте товары из каталога или попросите нас подобрать нужную деталь.', 'Перейти в каталог', '/catalog'));
+    const emptyCart = document.createElement('div');
+    emptyCart.className = 'empty-state cart-empty-state';
+    emptyCart.innerHTML = `
+      <div class="empty-state-card">
+        <p class="eyebrow">Корзина пуста</p>
+        <h2>Добавьте деталь из каталога</h2>
+        <p>Если не знаете артикул или размер, отправьте запрос на подбор — менеджер поможет найти нужную запчасть.</p>
+        <div class="empty-state-actions">
+          <a data-link href="${getRouteHref('/catalog')}" class="button button-primary">Перейти в каталог</a>
+          <a data-link href="${getRouteHref('/selection')}" class="button button-secondary">Подобрать деталь</a>
+        </div>
+      </div>
+    `;
+    itemsContainer.appendChild(emptyCart);
   } else {
     cart.items.forEach((item) => {
       const itemCard = document.createElement('article');
@@ -928,7 +1001,7 @@ const renderAssistant = () => {
   addAnalytics({ eventType: 'assistant_opened', source: 'frontend' });
 
   const messages = [
-    { role: 'assistant', text: 'Я помогу подобрать деталь по артикулу, размеру или модели техники.' },
+    { role: 'assistant', text: 'Опишите артикул, размер или модель техники — проверю каталог и подскажу, что уточнить менеджеру.' },
   ];
 
   const section = document.createElement('section');
@@ -949,6 +1022,7 @@ const renderAssistant = () => {
         <input name="question" type="text" placeholder="Опишите вашу задачу" autocomplete="off" required />
         <button class="button button-primary" type="submit">Спросить AI</button>
       </form>
+      <div class="assistant-status" data-assistant-status>AI подключается через Gemini или OpenAI, при отсутствии ключа работает локальная подсказка.</div>
       <div class="assistant-footer">
         <a class="button button-ghost" href="https://wa.me/77001234567" target="_blank">Передать менеджеру</a>
       </div>
@@ -957,12 +1031,14 @@ const renderAssistant = () => {
 
   const messagesContainer = section.querySelector('[data-assistant-messages]');
   const form = section.querySelector('[data-assistant-form]');
+  const status = section.querySelector('[data-assistant-status]');
 
   const renderMessages = () => {
     messagesContainer.innerHTML = messages.map((item) => `
       <div class="assistant-message ${item.role}">
         <div class="assistant-bubble">
-          <p>${item.text}</p>
+          <p>${formatMessageText(item.text)}</p>
+          ${item.meta ? `<span>${escapeHtml(item.meta)}</span>` : ''}
         </div>
       </div>
     `).join('');
@@ -971,21 +1047,36 @@ const renderAssistant = () => {
 
   const sendQuestion = async (question) => {
     if (!question) return;
+    const submitButton = form.querySelector('button[type="submit"]');
+    form.classList.add('is-loading');
+    submitButton.disabled = true;
     messages.push({ role: 'user', text: question });
     renderMessages();
     addAnalytics({ eventType: 'assistant_message_sent', source: 'frontend', meta: { question } });
-    messages.push({ role: 'assistant', text: 'Ищу подходящий вариант...' });
+    messages.push({ role: 'assistant', text: 'Проверяю каталог и подключаю AI...' });
     renderMessages();
 
     try {
       const response = await api.askShopAssistant(question);
       messages.pop();
-      messages.push({ role: 'assistant', text: response.answer });
+      const providerTitle = response.provider === 'gemini'
+        ? 'Gemini'
+        : response.provider === 'openai'
+          ? 'OpenAI'
+          : 'Локальный режим';
+      messages.push({ role: 'assistant', text: response.answer, meta: `${providerTitle}${response.model ? ` · ${response.model}` : ''}` });
+      status.textContent = response.provider === 'local'
+        ? 'AI-ключ не найден: показана локальная подсказка по каталогу.'
+        : `Ответ сформирован через ${providerTitle}. Совместимость всё равно подтверждает менеджер.`;
       renderMessages();
     } catch (error) {
       messages.pop();
       messages.push({ role: 'assistant', text: 'Не удалось получить ответ. Попробуйте позже или напишите менеджеру.' });
+      status.textContent = 'AI временно недоступен. Можно передать запрос менеджеру.';
       renderMessages();
+    } finally {
+      form.classList.remove('is-loading');
+      submitButton.disabled = false;
     }
   };
 

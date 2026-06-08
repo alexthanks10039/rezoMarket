@@ -42,6 +42,7 @@ const queryString = (params = {}) => {
 export const getApiBase = () => API_BASE;
 
 export const fetchCategories = () => request('/api/shop/categories');
+export const fetchFilterOptions = () => request('/api/shop/filters');
 export const fetchCategory = (slug) => request(`/api/shop/categories/${encodeURIComponent(slug)}`);
 export const fetchProducts = (filters = {}) => {
   const query = queryString(filters);

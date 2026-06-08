@@ -31,6 +31,10 @@ shopRouter.get('/api/shop/categories', (_req, res) => {
   res.json({ items: shopStore.listCategories() });
 });
 
+shopRouter.get('/api/shop/filters', (_req, res) => {
+  res.json(shopStore.getCatalogFilters());
+});
+
 shopRouter.get('/api/shop/categories/:slug', (req, res) => {
   const category = shopStore.getCategoryBySlug(req.params.slug);
   if (!category) {
@@ -49,9 +53,11 @@ shopRouter.get('/api/shop/products', (req, res) => {
     size: query.size,
     applianceType: query.applianceType,
     material: query.material,
+    compatibility: query.compatibility,
     minPrice: parseNumber(query.minPrice),
     maxPrice: parseNumber(query.maxPrice),
     inStock: query.inStock,
+    hasDiscount: parseBoolean(query.hasDiscount),
     sort: query.sort,
     page: parseNumber(query.page) || 1,
     limit: parseNumber(query.limit) || 12,

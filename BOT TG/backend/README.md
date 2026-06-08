@@ -23,7 +23,14 @@ PUBLIC_BASE_URL=https://example.com
 WEBHOOK_PATH=/api/telegram/webhook
 MINI_APP_URL=
 SITE_ORIGIN=http://127.0.0.1:4173
+GEMINI_API_KEY=put_google_ai_studio_key_here
+GEMINI_MODEL=gemini-2.5-flash
+OPENAI_API_KEY=put_openai_key_here
+OPENAI_MODEL=gpt-4.1-mini
+AI_TIMEOUT_MS=12000
 ```
+
+AI-помощник сначала использует Gemini при наличии `GEMINI_API_KEY`, затем OpenAI при наличии `OPENAI_API_KEY`. Если ключи не заданы или провайдер недоступен, endpoint вернёт локальную подсказку по каталогу.
 
 ## Public endpoints
 
@@ -31,6 +38,7 @@ SITE_ORIGIN=http://127.0.0.1:4173
 GET  /health
 POST /api/leads
 GET  /api/shop/categories
+GET  /api/shop/filters
 GET  /api/shop/categories/:slug
 GET  /api/shop/products
 GET  /api/shop/products/:slug
