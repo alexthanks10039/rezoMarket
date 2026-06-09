@@ -422,6 +422,8 @@ shopRouter.post('/api/admin/shop/orders/:id/commerce/actions', requireAdminKey, 
       state: req.body?.state,
       paymentMethod: req.body?.paymentMethod,
       transactionId: req.body?.transactionId,
+      fulfillmentMethod: req.body?.fulfillmentMethod,
+      trackingCode: req.body?.trackingCode,
     });
     if (result.ok && result.order) {
       shopStore.attachVendureOrder(localOrder.id, result.order);

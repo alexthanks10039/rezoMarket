@@ -399,7 +399,16 @@ export const fetchVendureOrder = async ({ id, code }) => {
   return order ? { ok: true, order } : { ok: false, reason: 'not_found' };
 };
 
-export const applyVendureOrderAction = async ({ orderId, action, note, state, paymentMethod, transactionId }) => {
+export const applyVendureOrderAction = async ({
+  orderId,
+  action,
+  note,
+  state,
+  paymentMethod,
+  transactionId,
+  fulfillmentMethod,
+  trackingCode,
+}) => {
   if (!isVendureAdminConfigured()) {
     return { ok: false, skipped: true, reason: 'Vendure Admin API is not configured' };
   }
@@ -475,7 +484,10 @@ export const applyVendureOrderAction = async ({ orderId, action, note, state, pa
         lines,
         handler: {
           code: 'manual-fulfillment',
-          arguments: [],
+          arguments: [
+            { name: 'method', value: fulfillmentMethod || 'Выдача после подтверждения менеджером' },
+            { name: 'trackingCode', value: trackingCode || '' },
+          ],
         },
       },
     });
