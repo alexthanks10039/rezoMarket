@@ -243,7 +243,7 @@ export const getProductBySlug = (slug) => {
 
 export const getProductById = (productId) => {
   if (!productId) return null;
-  const product = products.find((item) => item.id === productId);
+  const product = products.find((item) => item.id === productId || item.slug === productId || item.sku === productId);
   return product ? clone(product) : null;
 };
 
@@ -358,6 +358,11 @@ export const createOrder = ({
     id: `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     sessionId: sessionId || null,
     status: 'new',
+    vendureOrderId: null,
+    vendureOrderCode: null,
+    vendureOrderState: null,
+    vendureCurrencyCode: null,
+    vendureTotalWithTax: null,
     customerName: String(customerName || '').trim(),
     phone: String(phone || '').trim(),
     city: String(city || '').trim(),
@@ -385,6 +390,36 @@ export const getOrderById = (orderId) => {
 };
 
 export const listOrders = () => [...orders.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+export const updateOrderStatus = (orderId, status, meta = {}) => {
+  const order = orders.get(orderId);
+  if (!order) return null;
+  order.status = String(status || order.status).trim() || order.status;
+  order.meta = {
+    ...(order.meta || {}),
+    ...(meta || {}),
+  };
+  order.updatedAt = new Date().toISOString();
+  return clone(order);
+};
+
+export const attachVendureOrder = (orderId, vendureOrder) => {
+  const order = orders.get(orderId);
+  if (!order || !vendureOrder) return null;
+  order.vendureOrderId = vendureOrder.id || order.vendureOrderId;
+  order.vendureOrderCode = vendureOrder.code || order.vendureOrderCode;
+  order.vendureOrderState = vendureOrder.state || order.vendureOrderState;
+  order.vendureCurrencyCode = vendureOrder.currencyCode || order.vendureCurrencyCode;
+  order.vendureTotalWithTax = Number(vendureOrder.totalWithTax ?? order.vendureTotalWithTax ?? order.totalAmount);
+  order.meta = {
+    ...(order.meta || {}),
+    vendureOrderId: order.vendureOrderId,
+    vendureOrderCode: order.vendureOrderCode,
+    vendureOrderState: order.vendureOrderState,
+  };
+  order.updatedAt = new Date().toISOString();
+  return clone(order);
+};
 
 export const createSelectionRequest = ({ name, phone, message, applianceModel, partSize, comment, source }) => {
   const now = new Date().toISOString();

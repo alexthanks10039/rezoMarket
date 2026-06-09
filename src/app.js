@@ -920,8 +920,9 @@ const renderCart = async () => {
     try {
       const response = await api.submitOrder(payload);
       addAnalytics({ eventType: 'order_created', orderId: response.order.id, source: 'frontend' });
-      setAppContent(renderOrderSuccess(response.order));
       cartStore.setCart({ items: [], totalAmount: 0, itemCount: 0 });
+      state.currentCart = cartStore.getCart();
+      setAppContent(renderOrderSuccess(response.order));
       updateCartBadge();
     } catch (error) {
       const errorCard = renderEmptyState('Не удалось оформить заказ', error.message, 'Попробовать снова', '/cart');
@@ -933,11 +934,12 @@ const renderCart = async () => {
 const renderOrderSuccess = (order) => {
   const section = document.createElement('section');
   section.className = 'section success-panel';
+  const commerceCode = order.vendureOrderCode ? ` Код заказа: ${order.vendureOrderCode}.` : '';
   section.innerHTML = `
     <div class="section-heading">
       <span class="kicker">Заказ оформлен</span>
       <h2>Спасибо! Менеджер подтвердит наличие и цену.</h2>
-      <p>Мы получили заказ №${order.id}. Ожидайте звонка или сообщение в выбранный канал.</p>
+      <p>Мы получили заказ №${order.id}.${commerceCode} Ожидайте звонка или сообщение в выбранный канал.</p>
     </div>
     <div class="success-actions">
       <a class="button button-primary" href="https://wa.me/77001234567" target="_blank">Написать в WhatsApp</a>

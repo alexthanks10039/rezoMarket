@@ -73,6 +73,15 @@ export const listProductKnowledgeSnapshots = () => Array.from(productKnowledgeSn
 
 const getFallbackProducts = () => shopStore.listProducts({ page: 1, limit: 1000 }).items;
 
+const getSyncedOrderStatus = (order) => {
+  const vendureState = String(order.state || '').trim();
+  const managerStatus = String(order.customFields?.managerStatus || '').trim();
+  if (vendureState && !['Draft', 'AddingItems'].includes(vendureState)) {
+    return vendureState;
+  }
+  return managerStatus || vendureState || 'new';
+};
+
 export const syncProductsFromVendure = async () => {
   const products = [];
   const hasVendureAdmin = isVendureAdminConfigured();
@@ -126,6 +135,12 @@ export const syncOrdersFromVendure = async () => {
 
   const response = await fetchVendureOrders({ take: 50, skip: 0 });
   for (const order of response.items) {
+    if (order.customFields?.localOrderId) {
+      shopStore.attachVendureOrder(order.customFields.localOrderId, order);
+      shopStore.updateOrderStatus(order.customFields.localOrderId, getSyncedOrderStatus(order), {
+        vendureSyncAt: new Date().toISOString(),
+      });
+    }
     createAnalyticsEvent({
       eventType: 'vendure_order_created',
       vendureOrderId: order.id,

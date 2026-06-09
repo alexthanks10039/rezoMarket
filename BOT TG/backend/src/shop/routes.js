@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import { createLeadRecord } from '../leads.store.js';
 import { importSeedCatalogToVendure } from '../modules/integrations/vendure/vendure.import.service.js';
-import { createVendureDraftOrderFromShopOrder } from '../modules/integrations/vendure/vendure.order.service.js';
+import {
+  applyVendureOrderAction,
+  createVendureDraftOrderFromShopOrder,
+  fetchVendureOrder,
+  getVendureCommerceMethods,
+  quoteVendureCheckout,
+} from '../modules/integrations/vendure/vendure.order.service.js';
 import { searchCatalog } from '../modules/search/opensearch.service.js';
 import { sendOwnerLeadNotification } from '../telegram.service.js';
 import * as shopStore from './store.js';
@@ -36,6 +42,26 @@ shopRouter.get('/api/shop/categories', (_req, res) => {
 
 shopRouter.get('/api/shop/filters', (_req, res) => {
   res.json(shopStore.getCatalogFilters());
+});
+
+shopRouter.get('/api/shop/commerce/methods', async (_req, res) => {
+  try {
+    const methods = await getVendureCommerceMethods();
+    res.json({ success: true, ...methods });
+  } catch (error) {
+    console.error('[shop.commerce.methods_error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to load commerce methods' });
+  }
+});
+
+shopRouter.post('/api/shop/checkout/quote', async (req, res) => {
+  try {
+    const quote = await quoteVendureCheckout({ items: req.body?.items || [] });
+    res.status(quote.ok ? 200 : 422).json({ success: quote.ok, quote });
+  } catch (error) {
+    console.error('[shop.checkout.quote_error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Checkout quote failed' });
+  }
 });
 
 shopRouter.get('/api/shop/categories/:slug', async (req, res) => {
@@ -140,12 +166,36 @@ shopRouter.delete('/api/shop/cart/items/:id', (req, res) => {
 
 shopRouter.post('/api/shop/orders', async (req, res) => {
   const body = req.body || {};
-  const requiredFields = ['customerName', 'phone', 'items', 'totalAmount'];
+  const requiredFields = ['customerName', 'phone', 'items'];
   for (const field of requiredFields) {
     if (!body[field]) {
       return res.status(400).json(formatValidationError(`${field} is required`));
     }
   }
+
+  let checkoutQuote = null;
+  try {
+    checkoutQuote = await quoteVendureCheckout({ items: body.items });
+  } catch (error) {
+    console.error('[shop.order.quote_error]', error);
+    return res.status(500).json(formatValidationError(error.message || 'Checkout quote failed'));
+  }
+  if (!checkoutQuote.ok) {
+    return res.status(409).json({
+      success: false,
+      message: 'Some cart items are unavailable or changed',
+      quote: checkoutQuote,
+    });
+  }
+
+  const quotedItems = checkoutQuote.lines.map((line) => ({
+    productId: line.productSlug || line.productId,
+    slug: line.productSlug,
+    title: line.title,
+    sku: line.sku,
+    price: line.unitPrice,
+    quantity: line.quantity,
+  }));
 
   const order = shopStore.createOrder({
     sessionId: body.sessionId,
@@ -155,8 +205,8 @@ shopRouter.post('/api/shop/orders', async (req, res) => {
     contactMethod: body.contactMethod,
     deliveryMethod: body.deliveryMethod,
     comment: body.comment,
-    items: body.items,
-    totalAmount: body.totalAmount,
+    items: quotedItems,
+    totalAmount: checkoutQuote.totalWithTax,
     source: body.source || 'shop',
   });
 
@@ -191,6 +241,9 @@ shopRouter.post('/api/shop/orders', async (req, res) => {
 
   try {
     vendureResult = await createVendureDraftOrderFromShopOrder(order);
+    if (vendureResult.ok && vendureResult.order) {
+      shopStore.attachVendureOrder(order.id, vendureResult.order);
+    }
   } catch (error) {
     console.error('[shop.order.vendure_draft_error]', error);
     vendureResult = { ok: false, error: error.message };
@@ -202,7 +255,8 @@ shopRouter.post('/api/shop/orders', async (req, res) => {
 
   return res.status(201).json({
     success: true,
-    order,
+    order: shopStore.getOrderById(order.id) || order,
+    quote: checkoutQuote,
     leadId: lead.id,
     telegram: telegramResult,
     vendure: vendureResult,
@@ -320,13 +374,70 @@ shopRouter.get('/api/admin/shop/orders', requireAdminKey, (_req, res) => {
 });
 
 shopRouter.patch('/api/admin/shop/orders/:id/status', requireAdminKey, (req, res) => {
-  const order = shopStore.getOrderById(req.params.id);
+  const order = shopStore.updateOrderStatus(req.params.id, req.body.status, req.body.meta);
   if (!order) {
     return res.status(404).json({ success: false, message: 'Order not found' });
   }
-  order.status = String(req.body.status || order.status);
-  order.updatedAt = new Date().toISOString();
   res.json({ success: true, order });
+});
+
+shopRouter.get('/api/admin/shop/orders/:id/commerce', requireAdminKey, async (req, res) => {
+  const localOrder = shopStore.getOrderById(req.params.id);
+  if (!localOrder) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  if (!localOrder.vendureOrderId && !localOrder.vendureOrderCode) {
+    return res.json({ success: true, localOrder, vendure: { ok: false, reason: 'not_linked' } });
+  }
+  try {
+    const vendure = await fetchVendureOrder({
+      id: localOrder.vendureOrderId,
+      code: localOrder.vendureOrderCode,
+    });
+    if (vendure.ok) {
+      shopStore.attachVendureOrder(localOrder.id, vendure.order);
+    }
+    res.json({ success: true, localOrder: shopStore.getOrderById(req.params.id), vendure });
+  } catch (error) {
+    console.error('[shop.order.commerce_error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Commerce order fetch failed' });
+  }
+});
+
+shopRouter.post('/api/admin/shop/orders/:id/commerce/actions', requireAdminKey, async (req, res) => {
+  const localOrder = shopStore.getOrderById(req.params.id);
+  if (!localOrder) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+  const vendureOrderId = req.body?.vendureOrderId || localOrder.vendureOrderId;
+  if (!vendureOrderId) {
+    return res.status(409).json({ success: false, message: 'Order is not linked to Vendure' });
+  }
+
+  try {
+    const result = await applyVendureOrderAction({
+      orderId: vendureOrderId,
+      action: req.body?.action,
+      note: req.body?.note,
+      state: req.body?.state,
+      paymentMethod: req.body?.paymentMethod,
+      transactionId: req.body?.transactionId,
+    });
+    if (result.ok && result.order) {
+      shopStore.attachVendureOrder(localOrder.id, result.order);
+      if (req.body?.localStatus) {
+        shopStore.updateOrderStatus(localOrder.id, req.body.localStatus, { vendureAction: req.body.action });
+      }
+    }
+    res.status(result.ok ? 200 : 422).json({
+      success: result.ok,
+      result,
+      localOrder: shopStore.getOrderById(localOrder.id),
+    });
+  } catch (error) {
+    console.error('[shop.order.commerce_action_error]', error);
+    res.status(500).json({ success: false, message: error.message || 'Commerce action failed' });
+  }
 });
 
 shopRouter.get('/api/admin/shop/analytics', requireAdminKey, (_req, res) => {

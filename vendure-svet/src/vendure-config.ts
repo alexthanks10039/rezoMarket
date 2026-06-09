@@ -76,6 +76,15 @@ const variantFields = [
   { name: 'metaDescription', type: 'text' as const, nullable: true, public: true },
 ];
 
+const orderFields = [
+  { name: 'localOrderId', type: 'string' as const, nullable: true, public: false },
+  { name: 'source', type: 'string' as const, nullable: true, public: false },
+  { name: 'contactMethod', type: 'string' as const, nullable: true, public: false },
+  { name: 'deliveryMethod', type: 'string' as const, nullable: true, public: false },
+  { name: 'managerStatus', type: 'string' as const, nullable: true, public: false },
+  { name: 'customerComment', type: 'text' as const, nullable: true, public: false },
+];
+
 export const config: VendureConfig = {
   apiOptions: {
     port: int(process.env.VENDURE_PORT, 3002),
@@ -116,6 +125,7 @@ export const config: VendureConfig = {
   customFields: {
     Product: productFields,
     ProductVariant: variantFields,
+    Order: orderFields,
   },
   plugins: [
     AssetServerPlugin.init({

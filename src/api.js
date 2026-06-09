@@ -85,6 +85,12 @@ export const submitOrder = (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const quoteCheckout = (items) =>
+  request('/api/shop/checkout/quote', {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  });
+
 export const submitSelectionRequest = (payload) =>
   request('/api/shop/selection-request', {
     method: 'POST',

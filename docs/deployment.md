@@ -64,7 +64,7 @@ Invoke-RestMethod http://127.0.0.1:8010/health
 - Поставить reverse proxy с HTTPS.
 - Не публиковать наружу PostgreSQL, Redis, OpenSearch и внутренний backend без необходимости.
 - Заменить dev OpenSearch mode на защищённую схему или вынести OpenSearch в managed/private network.
-- Подключить реальные миграции Vendure вместо `VENDURE_DB_SYNCHRONIZE=true`; в production должно быть `false`.
+- Подключить реальные миграции Vendure вместо `VENDURE_DB_SYNCHRONIZE=true`; в production должно быть `false`. Особенно важно после custom fields для `Order`.
 - Настроить регулярный backup PostgreSQL.
 - OpenSearch и RAG можно восстановить переиндексацией, но для быстрого disaster recovery лучше делать volume snapshots.
 - Подключить мониторинг `/health` и `/health/deep`.
@@ -76,3 +76,4 @@ Invoke-RestMethod http://127.0.0.1:8010/health
 - Корзина в Vendure — это `activeOrder`; товары добавляются по `ProductVariant`.
 - Checkout требует customer, shipping address, shipping method, payment и transition order state.
 - Для production нужны environment variables, сильные superadmin credentials, healthchecks, server+worker, Redis/BullMQ или другой persistent job queue.
+- Manager-confirmation commerce flow описан в `docs/vendure-commerce-80-plan.md`.

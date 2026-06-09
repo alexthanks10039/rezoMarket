@@ -211,11 +211,26 @@ export const fetchVendureOrders = async ({ take = 50, skip = 0 } = {}) => {
           id
           code
           state
+          active
+          totalQuantity
+          subTotalWithTax
+          shippingWithTax
           totalWithTax
           currencyCode
           createdAt
           updatedAt
           customer { id firstName lastName phoneNumber emailAddress }
+          payments { id method state amount transactionId }
+          fulfillments { id state method trackingCode }
+          shippingLines { shippingMethod { id code name } priceWithTax }
+          customFields {
+            localOrderId
+            source
+            contactMethod
+            deliveryMethod
+            managerStatus
+            customerComment
+          }
           lines {
             id
             quantity

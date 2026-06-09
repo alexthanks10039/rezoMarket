@@ -33,6 +33,7 @@ export const toCatalogDocument = (product) => {
   const parsedSize = parseSize(customFields.size || product.size || variant.size);
 
   return {
+    id: product.slug || product.id || product.productId || '',
     productId: String(product.id || product.productId || ''),
     variantId: String(variant.id || product.variantId || product.id || ''),
     slug: product.slug,
@@ -88,6 +89,7 @@ export const ensureCatalogIndex = async () => {
       mappings: {
         properties: {
           productId: { type: 'keyword' },
+          id: { type: 'keyword' },
           variantId: { type: 'keyword' },
           slug: { type: 'keyword' },
           title: { type: 'text', analyzer: 'catalog_text', fields: { keyword: { type: 'keyword' } } },
