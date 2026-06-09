@@ -152,6 +152,12 @@ export const config: VendureConfig = {
     AdminUiPlugin.init({
       route: process.env.VENDURE_ADMIN_UI_ROUTE || 'admin',
       port: int(process.env.VENDURE_ADMIN_UI_PORT, 3003),
+      adminUiConfig: {
+        defaultLanguage: LanguageCode.ru,
+        defaultLocale: 'ru-RU',
+        availableLanguages: [LanguageCode.ru],
+        availableLocales: ['ru-RU'],
+      },
     }),
     SvetWebhookPlugin,
   ],
