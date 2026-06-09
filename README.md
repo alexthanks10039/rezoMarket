@@ -36,6 +36,14 @@ Copy-Item infra/.env.example infra/.env
 docker compose -f infra/docker-compose.yml up -d --build
 ```
 
+Или запуск всей среды одной командой из корня проекта:
+
+```bash
+./start.sh
+# или более подробный быстрый запуск через логирующий скрипт:
+./quick-start.sh
+```
+
 URL после запуска:
 
 - Frontend: `http://127.0.0.1:4173`
