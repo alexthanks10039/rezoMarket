@@ -40,8 +40,28 @@ docker compose -f infra/docker-compose.yml up -d --build
 
 ```bash
 ./start.sh
-# или более подробный быстрый запуск через логирующий скрипт:
+# или напрямую полный bootstrap:
 ./quick-start.sh
+```
+
+`quick-start.sh` проверяет Docker/Compose/curl, создаёт `infra/.env` из шаблона, поднимает stack, ждёт health endpoints, импортирует seed-каталог в Vendure и запускает синхронизацию OpenSearch.
+
+Полезные режимы:
+
+```bash
+./quick-start.sh --status
+./quick-start.sh --logs
+./quick-start.sh --down
+./quick-start.sh --tools
+./quick-start.sh --skip-build --skip-seed
+```
+
+Prod-like/server запуск через тот же скрипт:
+
+```bash
+cp infra/.env.production.example infra/.env.production
+# заменить placeholder-секреты
+./quick-start.sh --mode server --env-file infra/.env.production --with-deploy-override
 ```
 
 URL после запуска:

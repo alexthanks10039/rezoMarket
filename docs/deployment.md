@@ -15,6 +15,48 @@
 
 ## Минимальный порядок деплоя
 
+### Быстрый путь через bootstrap
+
+Для локальной среды:
+
+```bash
+./quick-start.sh
+```
+
+Скрипт делает полный dev bootstrap:
+
+- проверяет `docker`, `docker compose`, `curl` и shell-утилиты;
+- создаёт `infra/.env` из `infra/.env.example`, если файла ещё нет;
+- валидирует compose config;
+- запускает stack;
+- ждёт health endpoints Vendure, backend, frontend, RAG и OpenSearch;
+- импортирует seed-каталог в Vendure;
+- синхронизирует продукты в OpenSearch;
+- печатает ссылки и команды диагностики.
+
+Для server/prod-like режима:
+
+```bash
+cp infra/.env.production.example infra/.env.production
+# заменить все placeholder-секреты
+./quick-start.sh --mode server --env-file infra/.env.production --with-deploy-override
+```
+
+В server mode скрипт запрещает placeholder-секреты, `VENDURE_DB_SYNCHRONIZE=true`, `SITE_ORIGIN` без HTTPS и dev-пароли.
+
+Полезные команды:
+
+```bash
+./quick-start.sh --status
+./quick-start.sh --logs
+./quick-start.sh --down
+./quick-start.sh --reset-volumes --yes
+```
+
+Подробное ТЗ и анализ решений: `docs/quick-deploy-prompt.md`.
+
+### Ручной путь
+
 1. Скопировать env:
 
 ```powershell

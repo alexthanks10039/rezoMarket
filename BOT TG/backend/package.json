@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
+    "test:integration": "node --test --test-concurrency=1 test/integration/commerce-flow.test.js",
     "test:telegram": "node src/test-send.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

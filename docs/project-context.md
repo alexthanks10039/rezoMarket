@@ -60,7 +60,13 @@ Backend находится в `BOT TG/backend`.
 
 ## Data model сейчас
 
-Данные пока не persistent. Используются JS массивы и `Map`.
+Данные backend "Свет" пока не полностью persistent. Для локальных сущностей всё ещё используются JS массивы и `Map`, но commerce-контур уже связан с Vendure/PostgreSQL:
+
+- товары и варианты импортируются в Vendure;
+- storefront получает каталог через backend/OpenSearch;
+- оформление заказа создаёт локальный order и Vendure Draft Order;
+- локальный order хранит связь с Vendure через `vendureOrderId` и `vendureOrderCode`;
+- менеджер видит заказ в Vendure Admin UI.
 
 Есть прототипы:
 
@@ -92,3 +98,15 @@ Backend Мир Сальников как AI / Telegram / RAG / Analytics layer
 ```
 
 Vendure должен владеть товарами, корзинами, заказами, клиентами и остатками. Backend “Мир Сальников” должен владеть интеграциями: Telegram, AI/RAG, analytics, selection requests, webhook logs и задачами синхронизации.
+
+## Состояние на 2026-06-09
+
+- Docker dev stack поднят и проверен.
+- Vendure Admin UI работает на русском языке.
+- Заказ с сайта визуально проверен: `order_1781019396957_nwh9uc` -> Vendure code `FWGMFLYQ7CFEBPQ8`.
+- Заказ отображается в Vendure `Продажи -> Заказы` как `Черновик`.
+- Стандартный Vendure Dashboard не показывает этот заказ в `Последние заказы`, потому что текущий flow создаёт Draft Order.
+- Открытый критичный вопрос: единицы денег KZT. В storefront/backend сумма `350 KZT`, а в Vendure Admin UI список заказов показывает `3.50`.
+
+Актуальный дневной отчёт: `docs/daily-report-2026-06-09.md`.
+Актуальный список багов: `docs/bug-status-2026-06-09.md`.
