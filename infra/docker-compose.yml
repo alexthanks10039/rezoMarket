@@ -200,15 +200,23 @@ services:
       context: ../rag
     container_name: rezomarket-rag-api
     restart: unless-stopped
+    environment:
+      RAG_PROJECT_ROOT: /workspace
+      RAG_PRODUCT_SOURCE_URL: http://backend-svet:3000/api/shop/products?limit=1000
     ports:
       - "8010:8010"
     volumes:
       - rag_chroma:/app/chroma_db
+      - ../docs:/workspace/docs:ro
+      - ../PROJECT_ANALYSIS.md:/workspace/PROJECT_ANALYSIS.md:ro
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8010/health', timeout=3)\""]
       interval: 15s
       timeout: 5s
       retries: 10
+    depends_on:
+      backend-svet:
+        condition: service_healthy
 
   frontend:
     build:

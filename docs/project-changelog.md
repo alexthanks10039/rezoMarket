@@ -1,5 +1,19 @@
 # Changelog проекта Мир Сальников
 
+## 2026-06-12 - Три слоя RAG
+
+- Один FastAPI/ChromaDB сервис разделён на Developer, Business и Product коллекции.
+- Старые команды `python ingest.py`, `python query.py`, `GET /health` и `GET /query` сохранены.
+- Индексация создаёт версионную коллекцию и атомарно переключает активный индекс через `active_collections.json`; предыдущая рабочая версия остаётся доступной до успешного завершения.
+- Добавлен Business RAG источник с правилами магазина.
+- Product RAG может загружать каталог через `/api/shop/products` или JSON-файл.
+- Shop assistant мягко использует Product/Business RAG и сохраняет прежний fallback при пустом или недоступном индексе.
+- Developer RAG не передаётся публичному помощнику.
+- Модель эмбеддингов прогревается один раз при старте FastAPI, поэтому backend не упирается в тайм-аут на каждом запросе.
+- Добавлено rerank-усиление точных размеров и SKU: запрос `35x62x10` возвращает соответствующий товар первым.
+- Проверено в Docker: Developer `81` chunk, Business `2` chunk, Product `26` товаров; shop assistant возвращает `rag.used=true`.
+- Техническое задание: `docs/rag-three-layer-prompt.md`.
+
 ## 2026-06-12 - Фиксация архитектуры и commerce-flow
 
 - Добавлен интеграционный smoke test текущего commerce-flow без изменения бизнес-логики.
@@ -13,7 +27,7 @@
   - `docs/api-contracts-current.md`;
   - `docs/testing-strategy.md`;
   - `docs/adr/0001-service-data-ownership.md`.
-- Зафиксировано, что RAG API доступен, но Chroma collection пока отсутствует (`indexReady=false`).
+- На момент этой проверки RAG API был доступен без Chroma collection; состояние заменено реализованным трёхслойным индексом в разделе выше.
 - Изменения базы данных и commerce business logic на этом этапе не выполнялись.
 
 ## 2026-06-09 - Vendure commerce и проверка заказов
@@ -61,9 +75,9 @@
 
 ## RAG
 
-- `rag/` содержит локальные инструменты индексации документов через ChromaDB и HuggingFace embeddings.
-- `/api/rag/ask` пока остаётся временной shop-заглушкой.
-- Следующий шаг - связать backend RAG endpoint с продуктовым индексом товаров и справочных документов.
+- `rag/` содержит FastAPI, ChromaDB и HuggingFace embeddings с Developer, Business и Product слоями.
+- `/api/rag/ask` и `/api/shop/assistant/ask` используют публичные Product/Business индексы и сохраняют локальный fallback.
+- Developer RAG изолирован от публичного помощника и предназначен для внутренних технических сценариев.
 
 ## Следующие изменения
 
@@ -71,5 +85,5 @@
 - Настроить Vendure как commerce core.
 - Перенести ownership товаров, корзин и заказов в Vendure.
 - Подключить webhooks Vendure к Telegram CRM.
-- Добавить product import jobs и RAG indexing jobs.
+- Автоматизировать периодический запуск Product/Business RAG indexing jobs.
 - Добавить реальные изображения товаров.

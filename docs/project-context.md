@@ -55,7 +55,7 @@ Backend находится в `BOT TG/backend`.
 - `src/telegram.service.js` - Telegram Bot API;
 - `src/bot.routes.js` - webhook и меню Telegram CRM;
 - `src/bot-ui.service.js` - тексты и клавиатуры бота;
-- `src/rag.routes.js` - временный AI/RAG endpoint;
+- `src/rag.routes.js` - AI assistant с Product/Business RAG и локальным fallback;
 - `src/owner-access.js` - owner-only middleware.
 
 ## Data model сейчас
@@ -98,6 +98,15 @@ Backend Мир Сальников как AI / Telegram / RAG / Analytics layer
 ```
 
 Vendure должен владеть товарами, корзинами, заказами, клиентами и остатками. Backend “Мир Сальников” должен владеть интеграциями: Telegram, AI/RAG, analytics, selection requests, webhook logs и задачами синхронизации.
+
+## RAG-контур
+
+- Developer RAG: внутренняя документация и архитектура, visibility `internal`.
+- Business RAG: правила магазина, доставка, оплата, возвраты и работа менеджера, visibility `public`.
+- Product RAG: каталог backend/Vendure с SKU, размерами, совместимостью и служебным предупреждением о повторной проверке цены и наличия.
+- Каждый слой хранится в отдельной версионной Chroma-коллекции; активные версии задаются в `active_collections.json`.
+- Shop assistant запрашивает только Product/Business слои. При недоступном RAG прежний rule-based/Gemini/OpenAI flow продолжает работать.
+- Проверка 2026-06-12: `81` Developer chunks, `2` Business chunks, `26` Product records; backend возвращает `rag.used=true`.
 
 ## Состояние на 2026-06-09
 

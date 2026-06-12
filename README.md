@@ -10,8 +10,8 @@
 - `src/app.js` - страницы магазина: главная, каталог, товар, корзина, поиск, AI-помощник, подбор, контакты и админ-модалка.
 - `src/api.js` - клиент API для shop, cart, orders, analytics и RAG.
 - `src/cart-store.js` - клиентская cart session в `localStorage`.
-- `BOT TG/backend` - Express backend для shop API, лидов, Telegram CRM, аналитики и RAG-заглушки.
-- `rag` - локальный Python RAG-инструментарий для индексации проектных документов.
+- `BOT TG/backend` - Express backend для shop API, лидов, Telegram CRM, аналитики и AI/RAG orchestration.
+- `rag` - FastAPI/ChromaDB контур с Developer, Business и Product слоями знаний.
 - `vendure-svet` - отдельный Vendure commerce-core для каталога, товаров, заказов, Admin UI и Storefront API.
 - `infra` - Docker Compose для PostgreSQL/pgvector, Redis, OpenSearch, Vendure, backend "Свет", RAG API и frontend.
 
